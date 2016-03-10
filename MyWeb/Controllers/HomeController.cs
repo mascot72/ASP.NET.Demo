@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using MyWeb.Processor;
 
 namespace MyWeb.Controllers
 {
@@ -35,10 +36,36 @@ namespace MyWeb.Controllers
             return View();
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Upload(HttpPostedFileBase upload)
+        {
+            if (upload != null && upload.FileName != null)
+                return UploadFirst(upload);
+
+            string xlsPath = @"C:\workspace\resource\Cleansing (1st)";
+            var dir = new System.IO.DirectoryInfo(xlsPath);
+            var fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
+            var files = from file in fileList
+                        where file.Extension.Contains("xls")
+                        select file;
+            var fileName = files.FirstOrDefault().FullName;
+
+            if (ModelState.IsValid)
+            {
+                ExcelConverter proc = new ExcelConverter();
+
+                DataSet ds = proc.OfficeExcelTODataSet(fileName);
+                //DataSet ds = proc.OleDBExcelToDataSet(fileName);                
+
+                return View(ds.Tables[1]);
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult UploadFirst(HttpPostedFileBase upload)
         {
             if (ModelState.IsValid)
             {
@@ -51,7 +78,6 @@ namespace MyWeb.Controllers
 
                     // We return the interface, so that
                     IExcelDataReader reader = null;
-
 
                     if (upload.FileName.EndsWith(".xls"))
                     {
@@ -66,9 +92,9 @@ namespace MyWeb.Controllers
                         ModelState.AddModelError("File", "This file format is not supported");
                         return View();
                     }
-
-                    reader.IsFirstRowAsColumnNames = false;                    
-
+                    
+                    reader.IsFirstRowAsColumnNames = true;
+                    
                     DataSet result = reader.AsDataSet();
                     reader.Close();
 

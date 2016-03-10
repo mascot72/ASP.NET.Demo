@@ -19,6 +19,9 @@
             <input type="file" id="dataFile" name="upload" />
         </div>
         <div class="form-group">
+            <input type="submit" name="" value="UploadFirst" class="btn btn-default" />
+        </div>
+        <div class="form-group">
             <input type="submit" name="" value="Upload" class="btn btn-default" />
         </div>
 
@@ -31,6 +34,13 @@
                         @foreach (DataColumn col in Model.Columns)
                         {
                             <th>@col.ColumnName</th>
+                        }                        
+                    </tr>
+                    <tr>
+                        <th></th>
+                        @foreach (DataColumn col in Model.Columns)
+                        {
+                            <th>@col.DataType</th>
                         }
                     </tr>
                 </thead>
