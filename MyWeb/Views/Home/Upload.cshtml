@@ -1,5 +1,6 @@
 ﻿@{
     //Layout = null;
+    var i = 1;
 }
 @model System.Data.DataTable
 @using System.Data;
@@ -23,9 +24,10 @@
 
         if (Model != null)
         {
-            <table>
+            <table class="table table-bordered">
                 <thead>
                     <tr>
+                        <th>Seq.</th>
                         @foreach (DataColumn col in Model.Columns)
                         {
                             <th>@col.ColumnName</th>
@@ -36,6 +38,7 @@
                     @foreach (DataRow row in Model.Rows)
                     {
                         <tr>
+                            <td>@(i++)</td>
                             @foreach (DataColumn col in Model.Columns)
                             {
                                 <td>@row[col.ColumnName]</td>
