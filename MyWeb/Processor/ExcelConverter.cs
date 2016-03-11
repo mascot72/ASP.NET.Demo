@@ -162,30 +162,19 @@ namespace MyWeb.Processor
         /// <returns></returns>
         public DataSet ExcelToDB(string fileName)
         {
-            DataSet ds = new DataSet();
-            System.Data.DataTable dtFile = new System.Data.DataTable("ExcelImportFileInfo");
-            System.Data.DataTable dt = new System.Data.DataTable("ExcelImportedData");
-            ds.Tables.Add(dtFile);
-            ds.Tables.Add(dt);
+            //Loop
+
+            //추출
+            DataSet ds = OfficeExcelTODataSet(fileName);
 
             string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
-            string xlsxFile = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0}; Extended Properties='Excel 12.0;HDR=YES';";   //엑셀 2007 
             string classNamespace = "MyWeb.Models.Excel";
-            string connectionString = xlsxFile;
 
-            var missing = System.Reflection.Missing.Value;
-            Application app = new Microsoft.Office.Interop.Excel.Application();
-
-            //1번째 Worksheet찾기
-            Workbook workbook = app.Workbooks.Open(fileName, false, true, missing, missing, missing, true, XlPlatform.xlWindows, '\t', false, false, 0, false, true, 0);
-            Worksheet worksheet = workbook.Worksheets[1] as Worksheet; worksheet = (Worksheet)workbook.Worksheets.get_Item(1);
             var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
-
             var filesToProcess = fileName;
 
             using (var dbContext = new DataContext(sqlDatabase))
             {
-                // Skip interfaces. There is likely a better way
                 var classQuery = (from tmpClass in classList
                                   where !tmpClass.Name.StartsWith("I")
                                   select tmpClass);
@@ -206,7 +195,6 @@ namespace MyWeb.Processor
                         if (attributes.Any())
                         {
                             var tableName = ((TableAttribute)attributes[0]).Name;
-                            string sheetName = worksheet.Name;
 
                             //Class명과 일치하는 파일명
                             var file = Path.GetFileNameWithoutExtension(filesToProcess).Equals(tableName,
