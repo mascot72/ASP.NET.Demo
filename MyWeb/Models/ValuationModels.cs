@@ -4,13 +4,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MyWeb.Models.Excel
 {
-    [Table(Name = "VAL_EXCEL_TMP")]
+    [Table(Name = "VALU_EXCEL")]
     public class ValuationModels
     {
         //Primary Key column
-        [Column(CanBeNull = false, DbType = "bigint",
-        Name = "Id", IsPrimaryKey = true)]
-        public Int32 Id { get; set; }
+        [Column(CanBeNull = false, DbType = "int",
+        Name = "ID", IsPrimaryKey = true)]
+        public Int32 ID { get; set; }
 
         //Regular columns
         [Display(Name = "EID")]
@@ -141,6 +141,46 @@ namespace MyWeb.Models.Excel
         public string Ext9 { get; set; }
         [Display(Name = "Ext10")]
         public string Ext10 { get; set; }
+        [Display(Name = "Ext11")]
+        public string Ext11 { get; set; }
+        [Display(Name = "Ext12")]
+        public string Ext12 { get; set; }
+        [Display(Name = "Ext13")]
+        public string Ext13 { get; set; }
+        [Display(Name = "Ext14")]
+        public string Ext14 { get; set; }
+        [Display(Name = "Ext15")]
+        public string Ext15 { get; set; }
+        [Display(Name = "Ext16")]
+        public string Ext16 { get; set; }
+        [Display(Name = "Ext17")]
+        public string Ext17 { get; set; }
+        [Display(Name = "Ext18")]
+        public string Ext18 { get; set; }
+        [Display(Name = "Ext19")]
+        public string Ext19 { get; set; }
+        [Display(Name = "Ext20")]
+        public string Ext20 { get; set; }
+        [Display(Name = "Ext21")]
+        public string Ext21 { get; set; }
+        [Display(Name = "Ext22")]
+        public string Ext22 { get; set; }
+        [Display(Name = "Ext23")]
+        public string Ext23 { get; set; }
+        [Display(Name = "Ext24")]
+        public string Ext24 { get; set; }
+        [Display(Name = "Ext25")]
+        public string Ext250 { get; set; }
+        [Display(Name = "Ext26")]
+        public string Ext26 { get; set; }
+        [Display(Name = "Ext27")]
+        public string Ext27 { get; set; }
+        [Display(Name = "Ext28")]
+        public string Ext28 { get; set; }
+        [Display(Name = "Ext29")]
+        public string Ext29 { get; set; }
+        [Display(Name = "Ext30")]
+        public string Ext30 { get; set; }
 
     }
 }
