@@ -48,43 +48,59 @@ namespace MyWeb.Controllers
                 //return UploadFirst(upload);
             }
 
-
-            string xlsPath = @"C:\workspace\resource\Cleansing (1st)";
-            var dir = new System.IO.DirectoryInfo(xlsPath);
-            var fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
-            var files = from file in fileList
-                        where file.Extension.Contains("xls")
-                        select file;
-
-            if (fileName == string.Empty)
-                fileName = files.FirstOrDefault().FullName;
-
-            if (ModelState.IsValid)
+            try
             {
-                ExcelConverter proc = new ExcelConverter();
-                int workCount = 10;
-                DataSet ds = null;
+                string xlsPath = @"C:\workspace\resource\Cleansing (1st)";
+                var dir = new System.IO.DirectoryInfo(xlsPath);
+                IEnumerable<FileInfo> files = null;
+                if (dir.Exists)
+                {
+                    var fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
+                    files = from file in fileList
+                                where file.Extension.Contains("xls")
+                                select file;
+                }
+                
 
                 if (fileName == string.Empty)
+                    fileName = files.FirstOrDefault().FullName;
+
+                if (ModelState.IsValid)
                 {
-                    foreach (var filefullName in (files.ToList().Select(e => e.FullName)))
+                    ExcelConverter proc = new ExcelConverter();
+                    int workCount = 10;
+                    DataSet ds = null;
+
+                    if (fileName == string.Empty)
                     {
-                        if (workCount <= 0) break;
-                        ds = proc.ExcelToDB(filefullName);
-                        workCount--;
+                        foreach (var filefullName in (files.ToList().Select(e => e.FullName)))
+                        {
+                            if (workCount <= 0) break;
+                            ds = proc.ExcelToDB(filefullName);
+                            workCount--;
+                        }
                     }
-                }
-                else
-                {
-                    ds = proc.ExcelToDB(fileName);
-                }
+                    else
+                    {
+                        ds = proc.ExcelToDB(fileName);
+                    }
 
-                if (ds != null && ds.Tables.Count == 2)
-                    return View(ds.Tables[1]);
-                //DataSet ds = proc.OleDBExcelToDataSet(fileName);
+                    if (ds != null && ds.Tables.Count == 2)
+                        return View(ds.Tables[1]);
+                    //DataSet ds = proc.OleDBExcelToDataSet(fileName);
 
+
+                }
 
             }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+            
             return View();
         }
 

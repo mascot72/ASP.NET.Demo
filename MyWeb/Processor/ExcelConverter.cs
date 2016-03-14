@@ -173,7 +173,7 @@ namespace MyWeb.Processor
         public DataSet ExcelToDB(string fileName)
         {
 
-            string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+            string sqlDatabase = "Data Source=MACINPC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
             string classNamespace = "MyWeb.Models.Excel";
 
             var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
