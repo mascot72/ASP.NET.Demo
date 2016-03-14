@@ -2,7 +2,7 @@
 using System.Data.Linq.Mapping;
 using System.ComponentModel.DataAnnotations;
 
-namespace MyWeb.Models.Excel
+namespace MyWeb.Models
 {
     [Table(Name = "VALU_EXCEL")]
     public class ValuationModels

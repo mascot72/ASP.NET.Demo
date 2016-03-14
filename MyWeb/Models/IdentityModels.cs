@@ -29,5 +29,7 @@ namespace MyWeb.Models
         {
             return new ApplicationDbContext();
         }
+
+        public System.Data.Entity.DbSet<MyWeb.Models.ValuationModels> ValuationModels { get; set; }
     }
 }

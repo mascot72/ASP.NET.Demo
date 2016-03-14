@@ -55,8 +55,8 @@ namespace MyWeb.Controllers
             {
                 ExcelConverter proc = new ExcelConverter();
 
-                //DataSet ds = proc.OfficeExcelTODataSet(fileName);
-                DataSet ds = proc.OleDBExcelToDataSet(fileName);
+                DataSet ds = proc.ExcelToDB(fileName);
+                //DataSet ds = proc.OleDBExcelToDataSet(fileName);
 
                 return View(ds.Tables[1]);
             }

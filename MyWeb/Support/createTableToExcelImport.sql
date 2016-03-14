@@ -1,4 +1,4 @@
-Create Table FILE_IMPORT_INFO (
+Create Table [dbo].[FILE_IMPORT_INFO] (
 [ID] int PRIMARY KEY identity(1,1) not null,
 [Path] nvarchar(500) NULL,
 [Name] nvarchar(500) NULL,
