@@ -101,7 +101,7 @@ Create Table VALU_EXCEL (
 [Ext28] nvarchar(200) NULL,
 [Ext29] nvarchar(200) NULL,
 [Ext30] nvarchar(200) NULL,
-[Reson] nvarchar(100) NULL,
+[Reason] nvarchar(100) NULL,
 [CreateDate] datetime default(getdate()) NOT NULL,
 [Creator] varchar(50) NULL,
 )

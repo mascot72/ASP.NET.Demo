@@ -8,6 +8,7 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using MyWeb.Models;
+using MyWeb.Models.Excel;
 
 namespace MyWeb.Controllers
 {

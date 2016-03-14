@@ -16,7 +16,7 @@ namespace MyWeb.Processor
     public class ExcelConverter
     {
         //개행문자제거
-        private string Cleaning(string source, string deleteText = "(?<!\r)\n")
+        private string Cleaning(string source, string deleteText = @"\W")   //"(?<!\r)\n"
         {
             try
             {
@@ -46,8 +46,6 @@ namespace MyWeb.Processor
             try
             {
                 var missing = System.Reflection.Missing.Value;
-
-
 
                 Application app = new Microsoft.Office.Interop.Excel.Application();
 
@@ -87,6 +85,7 @@ namespace MyWeb.Processor
                     }
                 }
                 // get header information
+                int extIndex = 1;
                 for (int i = 1; i <= horizontal; i++)
                 {
                     if (myValues.GetValue(headerIndex, i) != null)
@@ -94,12 +93,21 @@ namespace MyWeb.Processor
                         columnName = myValues.GetValue(headerIndex, i).ToString().Trim();
                         if (columnName.Length > 0)
                         {
-                            if (dt.Columns.Contains(columnName))
+                            var column = Cleaning(columnName);
+                            if (dt.Columns.Contains(column))  //동일한폴더존재시
                             {
-                                dt.Columns.Add(new DataColumn(Cleaning(columnName + "_idx" + i)));
+                                if (column == "Comment")
+                                {
+                                    dt.Columns.Add(new DataColumn(column + "_" + i));
+                                }
+                                else {
+                                    dt.Columns.Add(new DataColumn("Ext" + extIndex++));
+                                }
                             }
                             else
-                                dt.Columns.Add(new DataColumn(Cleaning(columnName)));
+                            {
+                                dt.Columns.Add(new DataColumn(column));
+                            }
                         }
                     }
 
@@ -164,16 +172,14 @@ namespace MyWeb.Processor
         /// <returns></returns>
         public DataSet ExcelToDB(string fileName)
         {
-            //Loop
-
-            //추출
-            DataSet ds = OfficeExcelTODataSet(fileName);
 
             string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
             string classNamespace = "MyWeb.Models.Excel";
 
             var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
             var filesToProcess = fileName;
+            int extIndex = 1;
+            int idx = 0;
 
             using (var dbContext = new DataContext(sqlDatabase))
             {
@@ -184,202 +190,284 @@ namespace MyWeb.Processor
                 foreach (var tmpClass in classQuery)
                 {
                     var sqlTable = dbContext.GetTable(tmpClass);
+                    var fileTable = dbContext.GetTable(typeof(MyWeb.Models.FileImport));
 
-                    // How many records exist so far?
-                    var countQuery = (from object o in sqlTable select o);
-
-                    // Only process the table when no records existed yet?
-
-                    if (!countQuery.Any())
+                    MyWeb.Models.FileImport fileInfo = new Models.FileImport()
                     {
-                        var attributes = tmpClass.GetCustomAttributes(typeof(TableAttribute), true);    //Class의 속성을 가져온다
+                        Name = fileName,
+                        Creator = "",
+                        Extend = "",
+                        Path = "",
+                        Reason = "",
+                        Remark = "",
+                        ExtName = "",
+                        Result = ""
+                    };
+                    fileTable.InsertOnSubmit(fileInfo);
+                    dbContext.SubmitChanges();
 
-                        if (attributes.Any())
+                    try
+                    {
+
+
+                        // How many records exist so far?
+                        var countQuery = (from object o in sqlTable select o);
+                        var countQueryFile = (from object o in fileTable select o);
+
+                        // Only process the table when no records existed yet?
+
+                        if (1 == 1)   //if (!countQuery.Any())
                         {
-                            var tableName = ((TableAttribute)attributes[0]).Name;
+                            var attributes = tmpClass.GetCustomAttributes(typeof(TableAttribute), true);    //Class의 속성을 가져온다
 
-                            //Class명과 일치하는 파일명
-                            var file = Path.GetFileNameWithoutExtension(filesToProcess).Equals(tableName,
-                            StringComparison.CurrentCultureIgnoreCase);
-
-                            //Table mapping...<!------------------------------
-                            /*
-                            List<string> cols = new List<string> { "", "" };
-
-                            //존재하면 추가
-                            cols.Add("");
-                            */
-                            //------------------------------------------------>
-
-
-                            using (var myDataSet = new DataSet())
+                            if (attributes.Any())
                             {
-                                // The data table will have the same name
-                                using (var dataTable = myDataSet.Tables[tableName])
+                                var tableName = ((TableAttribute)attributes[0]).Name;
+
+                                using (var myDataSet = OfficeExcelTODataSet(fileName))
                                 {
-                                    // We need to create a new object of type tmpClass for each row and populate it.
-                                    foreach (DataRow row in dataTable.Rows)
+                                    //1. try catch해서 문제있으면 fileInfo에 저장후 마침
+
+
+                                    // The data table will have the same name
+                                    using (var dataTable = myDataSet.Tables[1])
                                     {
-                                        // Using Reflection to create this object and fill in properties.
-                                        var instance = Activator.CreateInstance(tmpClass);
-                                        var properties = tmpClass.GetProperties();
-
-                                        var propertyQuery = (from property in properties
-                                                             where property.CanWrite
-                                                             select property);
-
-                                        foreach (PropertyInfo property in propertyQuery)
+                                        //Copy Datatable
+                                        var currDataTable = dataTable.Copy();
+                                        if (!currDataTable.Columns.Contains("Reason"))
                                         {
-                                            // Grab the Linq to Sql data attributes.
-                                            var dbProperty = property.GetCustomAttribute
-                                                (typeof(ColumnAttribute), false) as ColumnAttribute;
-
-                                            if (dbProperty == null) continue;
-
-                                            // Make sure that this column exists in the data we received from the XLS spreadsheet
-                                            if (dataTable.Columns.Contains(dbProperty.Name))
+                                            currDataTable.Columns.Add("Reason");
+                                        }
+                                        for (int i = 0; i < 30; i++)
+                                        {
+                                            if (currDataTable.Columns.Contains("Ext" + (i + 1)))
                                             {
-
-                                                // Grab the value.  We need to account for DBNull first.
-                                                var val = row[dbProperty.Name];
-                                                if (val == DBNull.Value)
-                                                {
-                                                    val = null;
-                                                }
-
-                                                // We need a bunch of special processing for null.  Empty cells are returned
-                                                // instead of empty strings for example.
-                                                if (val == null)
-                                                {
-
-                                                    // DateTime should get processed specially.
-                                                    if ((property.PropertyType == typeof(DateTime)) ||
-                                                        (property.PropertyType == typeof(DateTime?)))
-                                                    {
-                                                        DateTime? nullableDate = null;
-                                                        property.SetValue(instance, nullableDate);
-                                                    }
-                                                    else if (!dbProperty.CanBeNull)
-                                                    {
-                                                        // If the value should not be null we need to create the default instance
-                                                        // of that class. (e.g. int = 0, etc.)  Strings do not have a constructor
-                                                        // that's usable this way so strings are a special check.
-                                                        if (property.PropertyType == typeof(string))
-                                                        {
-                                                            property.SetValue(instance, string.Empty);
-                                                        }
-                                                        else {
-                                                            var tmpVal = Activator.CreateInstance(property.PropertyType).GetType();
-                                                            property.SetValue(instance, Activator.CreateInstance(tmpVal));
-                                                        }
-                                                    }
-                                                    else {
-                                                        // To here, we have a valid null value and it's not a DateTime.
-                                                        property.SetValue(instance, null);
-                                                    }
-                                                }
-                                                else if ((dbProperty.DbType.StartsWith("nvarchar") &&
-                                                         (!string.IsNullOrEmpty(val.ToString()))))
-                                                {
-
-                                                    // This block of code assumes that the DbType is specified.  If it is,
-                                                    // we can account for string truncation here.
-                                                    var sLength = dbProperty.DbType.Substring(("nvarchar(").Length);
-                                                    sLength = sLength.Substring(0, sLength.Length - 1);
-                                                    var iLength = Int32.Parse(sLength);
-                                                    var newVal = val.ToString();
-                                                    newVal = newVal.Substring(0, Math.Min(iLength, newVal.Length));
-
-                                                    // We've truncated to here. If we are handling char type, a string
-                                                    // cannot be converted to char.  We need to handle this now. Only
-                                                    // handle for 1 length, otherwise we'll let the app throw an error.
-                                                    if ((property.PropertyType == typeof(char)) &&
-                                                        (newVal.Length == 1))
-                                                    {
-                                                        property.SetValue(instance, newVal[0]);
-                                                    }
-                                                    else {
-                                                        // Set the truncated string
-                                                        property.SetValue(instance, newVal);
-                                                    }
-                                                }
-                                                else if (val.GetType() != property.PropertyType)
-                                                {
-
-                                                    // To here, the resulting types are different somehow. We need to
-                                                    // do some conversions on the data.  Checking for DateTime.
-                                                    if ((val.GetType() == typeof(DateTime)) ||
-                                                        (val.GetType() == typeof(DateTime?)))
-                                                    {
-
-                                                        // nullable fields don't convert otherwise.
-                                                        DateTime? nullableDate = (DateTime)val;
-                                                        property.SetValue(instance, nullableDate);
-                                                    }
-                                                    else if ((property.PropertyType == typeof(DateTime)) ||
-                                                             (property.PropertyType == typeof(DateTime?)))
-                                                    {
-
-                                                        // A number of times the record comes back as a string instead.
-                                                        var newVal = val.ToString();
-                                                        var nullableDate = (string.IsNullOrWhiteSpace
-                                                           (newVal) ? (DateTime?)null : DateTime.Parse(newVal));
-                                                        property.SetValue(instance, nullableDate);
-                                                    }
-                                                    else {
-                                                        // To here we have a different type and need to convert. It's not
-                                                        // a DateTime, and it's not a null value which was handled already.
-                                                        var pType = property.PropertyType;
-
-                                                        // We can't take "Int? 3" and
-                                                        // put it into "Int" field. Must convert.
-                                                        if ((property.PropertyType.IsGenericType) &&
-                                                            (property.PropertyType.GetGenericTypeDefinition().
-                                                               Equals(typeof(Nullable<>))))
-                                                        {
-                                                            pType = Nullable.GetUnderlyingType(property.PropertyType);
-                                                        }
-
-                                                        // Finally change the type and set the value.
-                                                        var newProp = Convert.ChangeType(val, pType);
-                                                        property.SetValue(instance, newProp);
-                                                    }
-                                                }
-                                                else {
-                                                    // To here the types match and the value isn't null
-                                                    property.SetValue(instance, val);
-                                                }
-
-                                            } // dbColumn exists
+                                                continue;
+                                            }
                                             else
                                             {
-                                                //Ext add
+                                                currDataTable.Columns.Add("Ext" + (i + 1));
+                                            }                                            
+                                        }
 
+                                        // We need to create a new object of type tmpClass for each row and populate it.
+                                        foreach (DataRow row in currDataTable.Rows)
+                                        {
+                                            extIndex = 1;
+                                            if (row["Name"] == null || row["Name"].ToString().Trim() == "") continue;
+
+                                            // Using Reflection to create this object and fill in properties.
+                                            var instance = Activator.CreateInstance(tmpClass);
+                                            var properties = tmpClass.GetProperties();
+
+                                            var propertyQuery = (from property in properties
+                                                                 where property.CanWrite
+                                                                 select property);
+
+                                            //Table mapping(Extended)...<!------------------------------
+                                            //dataColumn만큼 loop, 속성과 일치하는 column이 없으면 Ext
+
+                                            foreach (DataColumn col in dataTable.Columns)
+                                            {
+                                                //컬럼명이 엑셀에 존재하지 않으면
+                                                if (propertyQuery.ToArray().Where(e => e.Name == col.ColumnName).Count() < 1)
+                                                {
+                                                    //Ext컬럼에 추가
+                                                    string currentExtColumnName = "Ext" + (extIndex++);
+                                                    row[currentExtColumnName] = row[col.ColumnName];
+                                                    row["Reason"] += "|" + col.ColumnName;
+                                                }
                                             }
+                                            //---------------------------------------------------------->
 
-                                        } // property loop
 
-                                        // This instance can be inserted if needed.
-                                        sqlTable.InsertOnSubmit(instance);
+                                            foreach (PropertyInfo property in propertyQuery)
+                                            {
+                                                // Grab the Linq to Sql data attributes.
+                                                var dbProperty = property.GetCustomAttribute
+                                                    (typeof(ColumnAttribute), false) as ColumnAttribute;
 
-                                    } // DataRow loop
+                                                if (dbProperty == null) continue;
 
-                                    // Submit changes.
-                                    dbContext.SubmitChanges();
 
-                                } // using DataTable
+                                                // Make sure that this column exists in the data we received from the XLS spreadsheet
+                                                if (currDataTable.Columns.Contains(property.Name))
+                                                {
+                                                    // Grab the value.  We need to account for DBNull first.
+                                                    var val = row[property.Name];
+                                                    if (val == DBNull.Value)
+                                                    {
+                                                        val = null;
+                                                    }
 
-                            } // using DataSet
+                                                    // We need a bunch of special processing for null.  Empty cells are returned
+                                                    // instead of empty strings for example.
+                                                    if (val == null)
+                                                    {
+                                                        // DateTime should get processed specially.
+                                                        if ((property.PropertyType == typeof(DateTime)) ||
+                                                            (property.PropertyType == typeof(DateTime?)))
+                                                        {
+                                                            DateTime? nullableDate = null;
+                                                            property.SetValue(instance, nullableDate);
+                                                        }
+                                                        else if (!dbProperty.CanBeNull)
+                                                        {
+                                                            // If the value should not be null we need to create the default instance
+                                                            // of that class. (e.g. int = 0, etc.)  Strings do not have a constructor
+                                                            // that's usable this way so strings are a special check.
+                                                            if (property.PropertyType == typeof(string))
+                                                            {
+                                                                property.SetValue(instance, string.Empty);
+                                                            }
+                                                            else {
+                                                                var tmpVal = Activator.CreateInstance(property.PropertyType).GetType();
+                                                                property.SetValue(instance, Activator.CreateInstance(tmpVal));
+                                                            }
+                                                        }
+                                                        else {
+                                                            // To here, we have a valid null value and it's not a DateTime.
+                                                            property.SetValue(instance, null);
+                                                        }
+                                                    }
+                                                    else if ((dbProperty.DbType.StartsWith("nvarchar") &&
+                                                             (!string.IsNullOrEmpty(val.ToString()))))
+                                                    {
 
-                        } // Attributes exist
+                                                        // This block of code assumes that the DbType is specified.  If it is,
+                                                        // we can account for string truncation here.
+                                                        var sLength = dbProperty.DbType.Substring(("nvarchar(").Length);
+                                                        sLength = sLength.Substring(0, sLength.Length - 1);
+                                                        var iLength = Int32.Parse(sLength);
+                                                        var newVal = val.ToString();
+                                                        newVal = newVal.Substring(0, Math.Min(iLength, newVal.Length));
 
-                    } // No records were preexisting in the database table.
+                                                        // We've truncated to here. If we are handling char type, a string
+                                                        // cannot be converted to char.  We need to handle this now. Only
+                                                        // handle for 1 length, otherwise we'll let the app throw an error.
+                                                        if ((property.PropertyType == typeof(char)) &&
+                                                            (newVal.Length == 1))
+                                                        {
+                                                            property.SetValue(instance, newVal[0]);
+                                                        }
+                                                        else {
+                                                            // Set the truncated string
+                                                            property.SetValue(instance, newVal);
+                                                        }
+                                                    }
+                                                    else if (val.GetType() != property.PropertyType)
+                                                    {
+
+                                                        // To here, the resulting types are different somehow. We need to
+                                                        // do some conversions on the data.  Checking for DateTime.
+                                                        if ((val.GetType() == typeof(DateTime)) ||
+                                                            (val.GetType() == typeof(DateTime?)))
+                                                        {
+
+                                                            // nullable fields don't convert otherwise.
+                                                            DateTime? nullableDate = (DateTime)val;
+                                                            property.SetValue(instance, nullableDate);
+                                                        }
+                                                        else if ((property.PropertyType == typeof(DateTime)) ||
+                                                                 (property.PropertyType == typeof(DateTime?)))
+                                                        {
+
+                                                            // A number of times the record comes back as a string instead.
+                                                            var newVal = val.ToString();
+                                                            var nullableDate = (string.IsNullOrWhiteSpace
+                                                               (newVal) ? (DateTime?)null : DateTime.Parse(newVal));
+                                                            property.SetValue(instance, nullableDate);
+                                                        }
+                                                        else {
+                                                            // To here we have a different type and need to convert. It's not
+                                                            // a DateTime, and it's not a null value which was handled already.
+                                                            var pType = property.PropertyType;
+
+                                                            // We can't take "Int? 3" and
+                                                            // put it into "Int" field. Must convert.
+                                                            if ((property.PropertyType.IsGenericType) &&
+                                                                (property.PropertyType.GetGenericTypeDefinition().
+                                                                   Equals(typeof(Nullable<>))))
+                                                            {
+                                                                pType = Nullable.GetUnderlyingType(property.PropertyType);
+                                                            }
+
+                                                            // Finally change the type and set the value.
+                                                            var newProp = Convert.ChangeType(val, pType);
+                                                            property.SetValue(instance, newProp);
+                                                        }
+                                                    }
+                                                    else {
+                                                        // To here the types match and the value isn't null
+                                                        property.SetValue(instance, val);
+                                                    }
+
+                                                } // dbColumn exists
+                                                else
+                                                {
+                                                    if ("FileID".Contains(property.Name))   //파일ID가져온다
+                                                    {
+                                                        property.SetValue(instance, fileInfo.ID);
+                                                    }
+                                                    else {
+                                                        //Ext add
+                                                        try
+                                                        {
+                                                            var val = row[property.Name];
+                                                            if (val == DBNull.Value)
+                                                            {
+                                                                val = null;
+                                                            }
+                                                            if (property.Name == "Ext" + extIndex++)
+                                                            {
+                                                                property.SetValue(instance, val != null ? val.ToString().Trim() : "");
+                                                            }
+                                                            property.SetValue(instance, val != null ? val.ToString().Trim() : "");
+
+                                                        }
+                                                        catch (Exception)
+                                                        {
+
+                                                        }
+                                                    }
+                                                }
+
+                                            } // property loop
+
+                                            // This instance can be inserted if needed.
+                                            //var inst = (MyWeb.Models.Excel.ValuationModels)instance;
+                                            //if (inst.Name != null)
+                                            sqlTable.InsertOnSubmit(instance);
+
+
+                                        } // DataRow loop
+
+                                        // Submit changes.
+                                        dbContext.SubmitChanges();
+
+                                    } // using DataTable
+
+                                    return myDataSet;
+                                } // using DataSet
+
+                            } // Attributes exist
+
+                        } // No records were preexisting in the database table.
+                    }
+                    catch (Exception ex)
+                    {
+                        string msg = ex.Message;                       
+                        
+                        fileInfo.Result = "E";
+                        fileInfo.Reason = msg;
+                        dbContext.SubmitChanges();
+                    }
 
                 } // class loop
 
             } // using DataContext
 
-            return ds;
+            return null;
         }
 
         //Excel to DataSet변환(OleDB방식)

@@ -40,8 +40,14 @@ namespace MyWeb.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Upload(HttpPostedFileBase upload)
         {
+            var fileName = string.Empty;
+
             if (upload != null && upload.FileName != null)
-                return UploadFirst(upload);
+            {
+                fileName = upload.FileName;
+                //return UploadFirst(upload);
+            }
+
 
             string xlsPath = @"C:\workspace\resource\Cleansing (1st)";
             var dir = new System.IO.DirectoryInfo(xlsPath);
@@ -49,16 +55,35 @@ namespace MyWeb.Controllers
             var files = from file in fileList
                         where file.Extension.Contains("xls")
                         select file;
-            var fileName = files.FirstOrDefault().FullName;
+
+            if (fileName == string.Empty)
+                fileName = files.FirstOrDefault().FullName;
 
             if (ModelState.IsValid)
             {
                 ExcelConverter proc = new ExcelConverter();
+                int workCount = 10;
+                DataSet ds = null;
 
-                DataSet ds = proc.ExcelToDB(fileName);
+                if (fileName == string.Empty)
+                {
+                    foreach (var filefullName in (files.ToList().Select(e => e.FullName)))
+                    {
+                        if (workCount <= 0) break;
+                        ds = proc.ExcelToDB(filefullName);
+                        workCount--;
+                    }
+                }
+                else
+                {
+                    ds = proc.ExcelToDB(fileName);
+                }
+
+                if (ds != null && ds.Tables.Count == 2)
+                    return View(ds.Tables[1]);
                 //DataSet ds = proc.OleDBExcelToDataSet(fileName);
 
-                return View(ds.Tables[1]);
+
             }
             return View();
         }
@@ -92,9 +117,9 @@ namespace MyWeb.Controllers
                         ModelState.AddModelError("File", "This file format is not supported");
                         return View();
                     }
-                    
+
                     reader.IsFirstRowAsColumnNames = true;
-                    
+
                     DataSet result = reader.AsDataSet();
                     reader.Close();
 

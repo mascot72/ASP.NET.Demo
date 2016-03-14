@@ -30,6 +30,6 @@ namespace MyWeb.Models
             return new ApplicationDbContext();
         }
 
-        public System.Data.Entity.DbSet<MyWeb.Models.ValuationModels> ValuationModels { get; set; }
+        public System.Data.Entity.DbSet<MyWeb.Models.Excel.ValuationModels> ValuationModels { get; set; }
     }
 }
