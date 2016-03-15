@@ -35,7 +35,7 @@ namespace MyWeb.Processor
         {
             var findedCount = 0;
             char spliter = ',';
-            string headerList = "EID,Inven,No.,SG No.,TID";
+            string headerList = "EID,Inven,No.,SG No.,TID,Name";
             int headerCellCount = headerList.Split(spliter).Length;
             int headerIndex = 1;
 
@@ -84,33 +84,66 @@ namespace MyWeb.Processor
                         break;
                     }
                 }
-                // get header information
-                int extIndex = 1;
-                for (int i = 1; i <= horizontal; i++)
+
+                //property declare
+                string classNamespace = "MyWeb.Models.Excel";
+                var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
+                var classQuery = (from tmpClass in classList
+                                  where !tmpClass.Name.StartsWith("I")
+                                  select tmpClass);
+                foreach (var tmpClass in classQuery)
                 {
-                    if (myValues.GetValue(headerIndex, i) != null)
+                    var attributes = tmpClass.GetCustomAttributes(typeof(TableAttribute), true);    //Class의 속성을 가져온다
+                    var properties = tmpClass.GetProperties();
+                    var propertyQuery = (from property in properties
+                                         where property.CanWrite
+                                         select property);
+
+                    // get header information
+                    int extIndex = 1;
+                    for (int i = 1; i <= horizontal; i++)
                     {
-                        columnName = myValues.GetValue(headerIndex, i).ToString().Trim();
-                        if (columnName.Length > 0)
+                        if (myValues.GetValue(headerIndex, i) != null)
                         {
-                            var column = Cleaning(columnName);
-                            if (dt.Columns.Contains(column))  //동일한폴더존재시
+                            columnName = myValues.GetValue(headerIndex, i).ToString().Trim();
+                            if (columnName.Length > 0)
                             {
-                                if (column == "Comment")
+                                var column = Cleaning(columnName);
+                                var property = propertyQuery.Where(e => e.Name.ToUpper() == column.ToUpper()).FirstOrDefault();
+                                if (dt.Columns.Contains(column))  //컬럼이 존재시
                                 {
-                                    dt.Columns.Add(new DataColumn(column + "_" + i));
+                                    if (column == "Comment")
+                                    {
+
+                                        dt.Columns.Add(new DataColumn(column + "_1", property.PropertyType));
+                                    }
+                                    else if ("Profit%".ToUpper().Contains(columnName.ToUpper()))
+                                    {
+                                        dt.Columns.Add(new DataColumn("ProfitPercent", typeof(float)));
+                                    }
+                                    else {
+                                        dt.Columns.Add(new DataColumn("Ext" + extIndex++)); //중복
+                                    }
                                 }
-                                else {
-                                    dt.Columns.Add(new DataColumn("Ext" + extIndex++));
+                                else
+                                {
+                                    if (property != null)
+                                    {
+
+                                        if (property.PropertyType == typeof(System.DateTime))
+                                        {
+                                            dt.Columns.Add(new DataColumn(column, typeof(System.DateTime)));
+                                        }
+                                        else
+                                            dt.Columns.Add(new DataColumn(column, property.PropertyType));
+                                    }
+                                    else
+                                        dt.Columns.Add(new DataColumn(column, typeof(object))); //속성에 없는 컬럼이 나올때.
                                 }
-                            }
-                            else
-                            {
-                                dt.Columns.Add(new DataColumn(column));
                             }
                         }
-                    }
 
+                    }
                 }
 
                 // Get the row information
@@ -126,17 +159,54 @@ namespace MyWeb.Processor
                 //    dt.Rows.Add(row);
                 //}
 
-                for (int a = (headerIndex + 1); a <= vertical; a++)
+                for (int a = (headerIndex + 1); a <= vertical; a++) //행
                 {
+                    /*
                     object[] poop = new object[horizontal];
-                    for (int b = 1; b <= horizontal; b++)
+                    for (int b = 1; b <= horizontal; b++)   //열
                     {
                         poop[b - 1] = myValues.GetValue(a, b);
                     }
                     DataRow row = dt.NewRow();
                     row.ItemArray = poop;
                     dt.Rows.Add(row);
+                    */
+
+                    DataRow row = dt.NewRow();
+                    for (int b = 1; b <= horizontal; b++)
+                    {
+                        if (myValues.GetValue(a, b) != null)
+                        {
+                            if (dt.Columns[b - 1].DataType == typeof(System.DateTime))
+                            {
+                                try
+                                {
+                                    var val = DateTime.FromOADate((double)myValues.GetValue(a, b));
+                                    row[b - 1] = val;
+                                }
+                                catch (Exception ex)
+                                {
+                                    row["Reason"] += (row["Reason"] != null && row["Reason"].ToString().Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index("+a+", "+b+") orginalValue="+ myValues.GetValue(a, b) + "}";
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    row[b - 1] = myValues.GetValue(a, b);
+                                }
+                                catch (Exception ex)
+                                {
+                                    row["Reason"] += (row["Reason"] != null && row["Reason"].ToString().Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index(" + a + ", " + b + ") orginalValue=" + myValues.GetValue(a, b) + "}";
+                                }
+
+                            }
+                        }
+
+                    }
+                    dt.Rows.Add(row);
                 }
+
 
                 ds.Tables.Add(dt);
 
@@ -173,7 +243,7 @@ namespace MyWeb.Processor
         public DataSet ExcelToDB(string fileName)
         {
 
-            string sqlDatabase = "Data Source=MACINPC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+            string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
             string classNamespace = "MyWeb.Models.Excel";
 
             var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
@@ -192,29 +262,32 @@ namespace MyWeb.Processor
                     var sqlTable = dbContext.GetTable(tmpClass);
                     var fileTable = dbContext.GetTable(typeof(MyWeb.Models.FileImport));
 
+                    FileInfo files = new System.IO.FileInfo(fileName);
+
+                    if (!files.Exists)
+                    {
+                        break;
+                    }
+
                     MyWeb.Models.FileImport fileInfo = new Models.FileImport()
                     {
-                        Name = fileName,
+                        Name = files.Name,
                         Creator = "",
+                        CreateDate = files.CreationTime,
                         Extend = "",
-                        Path = "",
+                        Path = files.DirectoryName,
                         Reason = "",
                         Remark = "",
-                        ExtName = "",
-                        Result = ""
+                        ExtName = Cleaning(files.Extension),
+                        Size = files.Length
                     };
                     fileTable.InsertOnSubmit(fileInfo);
                     dbContext.SubmitChanges();
 
                     try
                     {
-
-
-                        // How many records exist so far?
                         var countQuery = (from object o in sqlTable select o);
                         var countQueryFile = (from object o in fileTable select o);
-
-                        // Only process the table when no records existed yet?
 
                         if (1 == 1)   //if (!countQuery.Any())
                         {
@@ -227,7 +300,6 @@ namespace MyWeb.Processor
                                 using (var myDataSet = OfficeExcelTODataSet(fileName))
                                 {
                                     //1. try catch해서 문제있으면 fileInfo에 저장후 마침
-
 
                                     // The data table will have the same name
                                     using (var dataTable = myDataSet.Tables[1])
@@ -247,16 +319,14 @@ namespace MyWeb.Processor
                                             else
                                             {
                                                 currDataTable.Columns.Add("Ext" + (i + 1));
-                                            }                                            
+                                            }
                                         }
 
-                                        // We need to create a new object of type tmpClass for each row and populate it.
                                         foreach (DataRow row in currDataTable.Rows)
                                         {
-                                            extIndex = 1;
+                                            extIndex = 1;   //each row reset Ext? Columns
                                             if (row["Name"] == null || row["Name"].ToString().Trim() == "") continue;
 
-                                            // Using Reflection to create this object and fill in properties.
                                             var instance = Activator.CreateInstance(tmpClass);
                                             var properties = tmpClass.GetProperties();
 
@@ -265,17 +335,23 @@ namespace MyWeb.Processor
                                                                  select property);
 
                                             //Table mapping(Extended)...<!------------------------------
-                                            //dataColumn만큼 loop, 속성과 일치하는 column이 없으면 Ext
-
-                                            foreach (DataColumn col in dataTable.Columns)
+                                            //dataColumn만큼 loop, if property not matched column then Ext++
+                                            foreach (DataColumn col in currDataTable.Columns)
                                             {
-                                                //컬럼명이 엑셀에 존재하지 않으면
-                                                if (propertyQuery.ToArray().Where(e => e.Name == col.ColumnName).Count() < 1)
+                                                //엑셀컬럼중 Model Property에 존재하지 않으면
+                                                if (propertyQuery.ToArray().Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).Count() < 1)
                                                 {
-                                                    //Ext컬럼에 추가
-                                                    string currentExtColumnName = "Ext" + (extIndex++);
-                                                    row[currentExtColumnName] = row[col.ColumnName];
-                                                    row["Reason"] += "|" + col.ColumnName;
+                                                    if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper()))
+                                                    {
+                                                        row["ProfitPercent"] = row[col.ColumnName];
+                                                    }
+                                                    else
+                                                    {
+                                                        //Ext컬럼에 추가
+                                                        string currentExtColumnName = "Ext" + (extIndex++);
+                                                        row[currentExtColumnName] = row[col.ColumnName];
+                                                        row["Reason"] += (row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName;
+                                                    }
                                                 }
                                             }
                                             //---------------------------------------------------------->
@@ -289,22 +365,16 @@ namespace MyWeb.Processor
 
                                                 if (dbProperty == null) continue;
 
-
-                                                // Make sure that this column exists in the data we received from the XLS spreadsheet
                                                 if (currDataTable.Columns.Contains(property.Name))
                                                 {
-                                                    // Grab the value.  We need to account for DBNull first.
                                                     var val = row[property.Name];
                                                     if (val == DBNull.Value)
                                                     {
                                                         val = null;
                                                     }
 
-                                                    // We need a bunch of special processing for null.  Empty cells are returned
-                                                    // instead of empty strings for example.
                                                     if (val == null)
                                                     {
-                                                        // DateTime should get processed specially.
                                                         if ((property.PropertyType == typeof(DateTime)) ||
                                                             (property.PropertyType == typeof(DateTime?)))
                                                         {
@@ -313,9 +383,6 @@ namespace MyWeb.Processor
                                                         }
                                                         else if (!dbProperty.CanBeNull)
                                                         {
-                                                            // If the value should not be null we need to create the default instance
-                                                            // of that class. (e.g. int = 0, etc.)  Strings do not have a constructor
-                                                            // that's usable this way so strings are a special check.
                                                             if (property.PropertyType == typeof(string))
                                                             {
                                                                 property.SetValue(instance, string.Empty);
@@ -326,7 +393,6 @@ namespace MyWeb.Processor
                                                             }
                                                         }
                                                         else {
-                                                            // To here, we have a valid null value and it's not a DateTime.
                                                             property.SetValue(instance, null);
                                                         }
                                                     }
@@ -334,17 +400,12 @@ namespace MyWeb.Processor
                                                              (!string.IsNullOrEmpty(val.ToString()))))
                                                     {
 
-                                                        // This block of code assumes that the DbType is specified.  If it is,
-                                                        // we can account for string truncation here.
                                                         var sLength = dbProperty.DbType.Substring(("nvarchar(").Length);
                                                         sLength = sLength.Substring(0, sLength.Length - 1);
                                                         var iLength = Int32.Parse(sLength);
                                                         var newVal = val.ToString();
                                                         newVal = newVal.Substring(0, Math.Min(iLength, newVal.Length));
 
-                                                        // We've truncated to here. If we are handling char type, a string
-                                                        // cannot be converted to char.  We need to handle this now. Only
-                                                        // handle for 1 length, otherwise we'll let the app throw an error.
                                                         if ((property.PropertyType == typeof(char)) &&
                                                             (newVal.Length == 1))
                                                         {
@@ -358,13 +419,10 @@ namespace MyWeb.Processor
                                                     else if (val.GetType() != property.PropertyType)
                                                     {
 
-                                                        // To here, the resulting types are different somehow. We need to
-                                                        // do some conversions on the data.  Checking for DateTime.
                                                         if ((val.GetType() == typeof(DateTime)) ||
                                                             (val.GetType() == typeof(DateTime?)))
                                                         {
 
-                                                            // nullable fields don't convert otherwise.
                                                             DateTime? nullableDate = (DateTime)val;
                                                             property.SetValue(instance, nullableDate);
                                                         }
@@ -372,19 +430,14 @@ namespace MyWeb.Processor
                                                                  (property.PropertyType == typeof(DateTime?)))
                                                         {
 
-                                                            // A number of times the record comes back as a string instead.
                                                             var newVal = val.ToString();
                                                             var nullableDate = (string.IsNullOrWhiteSpace
                                                                (newVal) ? (DateTime?)null : DateTime.Parse(newVal));
                                                             property.SetValue(instance, nullableDate);
                                                         }
                                                         else {
-                                                            // To here we have a different type and need to convert. It's not
-                                                            // a DateTime, and it's not a null value which was handled already.
                                                             var pType = property.PropertyType;
 
-                                                            // We can't take "Int? 3" and
-                                                            // put it into "Int" field. Must convert.
                                                             if ((property.PropertyType.IsGenericType) &&
                                                                 (property.PropertyType.GetGenericTypeDefinition().
                                                                    Equals(typeof(Nullable<>))))
@@ -392,20 +445,18 @@ namespace MyWeb.Processor
                                                                 pType = Nullable.GetUnderlyingType(property.PropertyType);
                                                             }
 
-                                                            // Finally change the type and set the value.
                                                             var newProp = Convert.ChangeType(val, pType);
                                                             property.SetValue(instance, newProp);
                                                         }
                                                     }
                                                     else {
-                                                        // To here the types match and the value isn't null
                                                         property.SetValue(instance, val);
                                                     }
 
                                                 } // dbColumn exists
                                                 else
                                                 {
-                                                    if ("FileID".Contains(property.Name))   //파일ID가져온다
+                                                    if ("FileID".Contains(property.Name))   //파일ID Setting
                                                     {
                                                         property.SetValue(instance, fileInfo.ID);
                                                     }
@@ -434,15 +485,15 @@ namespace MyWeb.Processor
 
                                             } // property loop
 
-                                            // This instance can be inserted if needed.
-                                            //var inst = (MyWeb.Models.Excel.ValuationModels)instance;
+
                                             //if (inst.Name != null)
                                             sqlTable.InsertOnSubmit(instance);
-
+                                            idx++;  //processed row Index
 
                                         } // DataRow loop
 
                                         // Submit changes.
+                                        fileInfo.Result = "S";
                                         dbContext.SubmitChanges();
 
                                     } // using DataTable
@@ -456,10 +507,10 @@ namespace MyWeb.Processor
                     }
                     catch (Exception ex)
                     {
-                        string msg = ex.Message;                       
-                        
+                        string msg = ex.Message;
+
                         fileInfo.Result = "E";
-                        fileInfo.Reason = msg;
+                        fileInfo.Reason = msg + "\r\nwork row index is (" + idx + ")";
                         dbContext.SubmitChanges();
                     }
 

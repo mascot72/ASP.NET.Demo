@@ -38,7 +38,7 @@ namespace MyWeb.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Upload(HttpPostedFileBase upload)
+        public ActionResult Upload(HttpPostedFileBase upload, string isReadonly)
         {
             var fileName = string.Empty;
 
@@ -60,43 +60,45 @@ namespace MyWeb.Controllers
                                 where file.Extension.Contains("xls")
                                 select file;
                 }
-                
-
-                if (fileName == string.Empty)
-                    fileName = files.FirstOrDefault().FullName;
 
                 if (ModelState.IsValid)
                 {
                     ExcelConverter proc = new ExcelConverter();
-                    int workCount = 10;
                     DataSet ds = null;
-
-                    if (fileName == string.Empty)
+                    if (isReadonly != null && isReadonly == "true")
                     {
-                        foreach (var filefullName in (files.ToList().Select(e => e.FullName)))
-                        {
-                            if (workCount <= 0) break;
-                            ds = proc.ExcelToDB(filefullName);
-                            workCount--;
-                        }
+                        return UploadFirst(upload);
                     }
                     else
-                    {
-                        ds = proc.ExcelToDB(fileName);
+                    {                        
+                        int workCount = 100;
+
+                        if (fileName == string.Empty)
+                        {
+                            foreach (var filefullName in (files.ToList().Select(e => e.FullName)))
+                            {
+                                if (workCount <= 0) break;
+                                ds = proc.ExcelToDB(filefullName);
+                                workCount--;
+                            }
+                        }
+                        else
+                        {
+                            ds = proc.ExcelToDB(fileName);
+                        }
+
+                        ViewBag.Message = "Process File Count : " + ds.Tables[0].Rows.Count.ToString();
+                        ViewBag.Message += "\r\nProcessed Row Count : " + ds.Tables[1].Rows.Count.ToString();                        
                     }
 
                     if (ds != null && ds.Tables.Count == 2)
                         return View(ds.Tables[1]);
-                    //DataSet ds = proc.OleDBExcelToDataSet(fileName);
-
-
                 }
-
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                ViewBag.Message = ex.Message;
+                return View();
             }
 
 
