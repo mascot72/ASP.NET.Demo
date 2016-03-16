@@ -31,7 +31,7 @@ namespace MyWeb.Processor
             }
         }
         //Excel to DataSet변환(Office.Interop방식)
-        public DataSet OfficeExcelTODataSet(string fileName)
+        public DataSet OfficeExcelTODataSet(string fileName, List<string> extCol)
         {
             var findedCount = 0;
             char spliter = ',';
@@ -114,7 +114,6 @@ namespace MyWeb.Processor
                                 {
                                     if (column == "Comment")
                                     {
-
                                         dt.Columns.Add(new DataColumn(column + "_1", property.PropertyType));
                                     }
                                     else if ("Profit%".ToUpper().Contains(columnName.ToUpper()))
@@ -122,6 +121,7 @@ namespace MyWeb.Processor
                                         dt.Columns.Add(new DataColumn("ProfitPercent", typeof(float)));
                                     }
                                     else {
+                                        extCol.Add(column);
                                         dt.Columns.Add(new DataColumn("Ext" + extIndex++)); //중복
                                     }
                                 }
@@ -135,7 +135,7 @@ namespace MyWeb.Processor
                                         //    dt.Columns.Add(new DataColumn(column, typeof(DateTime)));
                                         //}
                                         //else
-                                            dt.Columns.Add(new DataColumn(column, property.PropertyType));
+                                        dt.Columns.Add(new DataColumn(column, property.PropertyType));
                                     }
                                     else
                                         dt.Columns.Add(new DataColumn(column, typeof(object))); //속성에 없는 컬럼이 나올때.
@@ -191,7 +191,7 @@ namespace MyWeb.Processor
                                 }
                                 catch (Exception ex)
                                 {
-                                    message += (message != null && message.Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index("+a+", "+b+") orginalValue="+ myValues.GetValue(a, b) + "}";
+                                    message += (message != null && message.Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index(" + a + ", " + b + ") orginalValue=" + myValues.GetValue(a, b) + "}";
                                 }
                             }
                             else
@@ -238,6 +238,26 @@ namespace MyWeb.Processor
             return ds;
         }
 
+        public IEnumerable<MyWeb.Models.FileImport> GetFileTable()
+        {
+            try
+            {
+                string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+                IEnumerable<MyWeb.Models.FileImport> fileTable = null;
+                using (var dbContext = new DataContext(sqlDatabase))
+                {
+                    fileTable = dbContext.GetTable<MyWeb.Models.FileImport>().ToList();
+                    //.ExecuteQuery<MyWeb.Models.FileImport>("SELECT ID, Path, Name, Extname, Result, Reason, Remark, Extend, CreateDate, Creator, Size FROM FILE_IMPORT_INFO");
+                    
+                }
+                return fileTable;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         //DB저장()
         /// <summary>
         /// File의 경로를 읽고
@@ -248,7 +268,7 @@ namespace MyWeb.Processor
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public DataSet ExcelToDB(string fileName)
+        public DataSet ExcelToDB(string fileName, List<string> extCol)
         {
 
             string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
@@ -305,7 +325,7 @@ namespace MyWeb.Processor
                             {
                                 var tableName = ((TableAttribute)attributes[0]).Name;
 
-                                using (var myDataSet = OfficeExcelTODataSet(fileName))
+                                using (var myDataSet = OfficeExcelTODataSet(fileName, extCol))
                                 {
                                     //1. try catch해서 문제있으면 fileInfo에 저장후 마침
 
@@ -335,8 +355,8 @@ namespace MyWeb.Processor
                                             extIndex = 1;   //each row reset Ext? Columns
                                             if (row["Name"] == null || row["Name"].ToString().Trim() == "")
                                             {
-                                                throw new ApplicationException("Name컬럼이 존재하지 않습니다");
-                                                //continue;
+                                                //throw new ApplicationException("Name컬럼이 존재하지 않습니다");
+                                                continue;
                                             }
 
                                             var instance = Activator.CreateInstance(tmpClass);
@@ -359,10 +379,37 @@ namespace MyWeb.Processor
                                                     }
                                                     else
                                                     {
+                                                        //Ext누적한다.
+                                                        //List<string> extCol = new List<string>();
+                                                        var n = 0;
+                                                        bool exists = false;
+                                                        foreach (string ext in extCol)
+                                                        {
+                                                            n++;
+                                                            if (ext.ToUpper().Contains(col.ColumnName.ToUpper()))  //Ext에 존재하면
+                                                            {
+                                                                string extName = "Ext" + (n);
+                                                                row[extName] = row[col.ColumnName];
+                                                                exists = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                        if (!exists)
+                                                        {
+                                                            if (extCol.Count > 30) throw new ApplicationException("Ext컬럼이 30개가 넘어서 현재파일은 Rollback합니다");
+
+                                                            extCol.Add(col.ColumnName);
+                                                            string extName = "Ext" + (extCol.Count);
+                                                            row[extName] = row[col.ColumnName];
+                                                            row["Reason"] += (row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName + "(" + extName + ")";
+                                                        }
+
+                                                        /*
                                                         //Ext컬럼에 추가
                                                         string currentExtColumnName = "Ext" + (extIndex++);
                                                         row[currentExtColumnName] = row[col.ColumnName];
                                                         row["Reason"] += (row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName;
+                                                        */
                                                     }
                                                 }
                                             }
@@ -484,15 +531,19 @@ namespace MyWeb.Processor
                                                         //Ext add
                                                         try
                                                         {
+                                                            if (property.Name.ToUpper() == "WAREHOUSECOST")
+                                                            {
+                                                                break;
+                                                            }
                                                             var val = row[property.Name];
                                                             if (val == DBNull.Value)
                                                             {
                                                                 val = null;
                                                             }
-                                                            if (property.Name == "Ext" + extIndex++)
-                                                            {
-                                                                property.SetValue(instance, val != null ? val.ToString().Trim() : "");
-                                                            }
+                                                            //if (property.Name == "Ext" + extIndex++)
+                                                            //{
+                                                            //    property.SetValue(instance, val != null ? val.ToString().Trim() : "");
+                                                            //}
                                                             property.SetValue(instance, val != null ? val.ToString().Trim() : "");
 
                                                         }
@@ -514,6 +565,13 @@ namespace MyWeb.Processor
 
                                         // Submit changes.
                                         fileInfo.Result = "S";
+                                        string res = "";
+                                        foreach (string extStr in extCol)
+                                        {
+                                            res += (res.Length > 0 ? "|" : "") + extStr;
+                                        }
+                                        fileInfo.Remark = "Ext info:" + res;
+                                        fileInfo.Reason = (idx).ToString();
                                         dbContext.SubmitChanges();
 
                                     } // using DataTable

@@ -38,7 +38,7 @@ namespace MyWeb.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Upload(HttpPostedFileBase upload, string isReadonly)
+        public ActionResult Upload(HttpPostedFileBase upload, string isReadonly, int workCount = 1)
         {
             var fileName = string.Empty;
 
@@ -57,8 +57,8 @@ namespace MyWeb.Controllers
                 {
                     var fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
                     files = from file in fileList
-                                where file.Extension.Contains("xls")
-                                select file;
+                            where file.Extension.Contains("xls")
+                            select file;
                 }
 
                 if (ModelState.IsValid)
@@ -70,25 +70,45 @@ namespace MyWeb.Controllers
                         return UploadFirst(upload);
                     }
                     else
-                    {                        
-                        int workCount = 10;
-
+                    {
+                        int resultFiles = 0;
+                        int resultRows = 0;
+                        List<string> extCol = new List<string>();
+                        var fileTable = proc.GetFileTable();
                         if (fileName == string.Empty)
                         {
-                            foreach (var filefullName in (files.ToList().Select(e => e.FullName)))
+
+                            foreach (var file in files)
                             {
-                                if (workCount <= 0) break;
-                                ds = proc.ExcelToDB(filefullName);
-                                workCount--;
+                                try
+                                {
+                                    //완료된 파일은 제외!
+                                    if (fileTable.Where(e => e.Name == file.Name).Count() > 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    string filefullName = file.FullName;
+
+                                    if (workCount <= 0) break;
+                                    ds = proc.ExcelToDB(filefullName, extCol);
+                                    workCount--;
+                                    resultFiles += ds.Tables[0].Rows.Count;
+                                    resultRows += ds.Tables[1].Rows.Count;
+                                }
+                                catch (Exception)
+                                {
+                                    //throw;
+                                }
                             }
                         }
                         else
                         {
-                            ds = proc.ExcelToDB(fileName);
+                            ds = proc.ExcelToDB(fileName, extCol);
                         }
 
-                        ViewBag.Message = "Process File Count : " + ds.Tables[0].Rows.Count.ToString();
-                        ViewBag.Message += "\r\nProcessed Row Count : " + ds.Tables[1].Rows.Count.ToString();                        
+                        ViewBag.Message = "Process File Count : " + resultFiles.ToString();
+                        ViewBag.Message += "\r\nProcessed Row Count : " + resultRows.ToString();
                     }
 
                     if (ds != null && ds.Tables.Count == 2)
@@ -102,7 +122,7 @@ namespace MyWeb.Controllers
             }
 
 
-            
+
             return View();
         }
 
