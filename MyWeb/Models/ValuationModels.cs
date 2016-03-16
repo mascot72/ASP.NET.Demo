@@ -89,7 +89,7 @@ namespace MyWeb.Models.Excel
 
         [Display(Name = "Date")]
         [Column(CanBeNull = true, DbType = "datetime", IsPrimaryKey = false)]
-        public DateTime? Date { get; set; }
+        public DateTime Date { get; set; }
 
         [Display(Name = "Name")]
         [Column(CanBeNull = true, DbType = "nvarchar(255)", IsPrimaryKey = false)]
@@ -185,11 +185,11 @@ namespace MyWeb.Models.Excel
 
         [Display(Name = "*Buy Date")]
         [Column(CanBeNull = true, DbType = "datetime", IsPrimaryKey = false)]
-        public DateTime? BuyDate { get; set; }
+        public DateTime BuyDate { get; set; }
 
         [Display(Name = "*Sell Date")]
         [Column(CanBeNull = true, DbType = "datetime", IsPrimaryKey = false)]
-        public DateTime? SellDate { get; set; }
+        public DateTime SellDate { get; set; }
 
         [Display(Name = "Buyer")]
         [Column(CanBeNull = true, DbType = "varchar(255)", IsPrimaryKey = false)]

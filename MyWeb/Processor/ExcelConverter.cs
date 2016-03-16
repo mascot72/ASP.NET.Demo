@@ -130,11 +130,11 @@ namespace MyWeb.Processor
                                     if (property != null)
                                     {
 
-                                        if (property.PropertyType == typeof(System.DateTime))
-                                        {
-                                            dt.Columns.Add(new DataColumn(column, typeof(System.DateTime)));
-                                        }
-                                        else
+                                        //if (property.PropertyType == typeof(System.DateTime))ㄷ
+                                        //{
+                                        //    dt.Columns.Add(new DataColumn(column, typeof(DateTime)));
+                                        //}
+                                        //else
                                             dt.Columns.Add(new DataColumn(column, property.PropertyType));
                                     }
                                     else
@@ -144,7 +144,11 @@ namespace MyWeb.Processor
                         }
 
                     }
+                    //dt.Columns.Add(new DataColumn("Reason", typeof(string)));   //필수컴럼중 추가
                 }
+
+                if (dt.Columns.Count < horizontal)
+                    throw new ApplicationException("Header가 공백이어서 처리할 수 없습니다");
 
                 // Get the row information
                 //for (int a = (headerIndex + 1); a <= vertical; a++)
@@ -173,11 +177,12 @@ namespace MyWeb.Processor
                     */
 
                     DataRow row = dt.NewRow();
+                    string message = "";
                     for (int b = 1; b <= horizontal; b++)
                     {
                         if (myValues.GetValue(a, b) != null)
                         {
-                            if (dt.Columns[b - 1].DataType == typeof(System.DateTime))
+                            if (dt.Columns[b - 1].DataType == typeof(DateTime))
                             {
                                 try
                                 {
@@ -186,7 +191,7 @@ namespace MyWeb.Processor
                                 }
                                 catch (Exception ex)
                                 {
-                                    row["Reason"] += (row["Reason"] != null && row["Reason"].ToString().Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index("+a+", "+b+") orginalValue="+ myValues.GetValue(a, b) + "}";
+                                    message += (message != null && message.Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index("+a+", "+b+") orginalValue="+ myValues.GetValue(a, b) + "}";
                                 }
                             }
                             else
@@ -197,13 +202,16 @@ namespace MyWeb.Processor
                                 }
                                 catch (Exception ex)
                                 {
-                                    row["Reason"] += (row["Reason"] != null && row["Reason"].ToString().Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index(" + a + ", " + b + ") orginalValue=" + myValues.GetValue(a, b) + "}";
+                                    message += (message != null && message.Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index(" + a + ", " + b + ") orginalValue=" + myValues.GetValue(a, b) + "}";
                                 }
 
                             }
                         }
 
                     }
+                    if (message.Length > 0)
+                        throw new ApplicationException(message);
+
                     dt.Rows.Add(row);
                 }
 
@@ -325,7 +333,11 @@ namespace MyWeb.Processor
                                         foreach (DataRow row in currDataTable.Rows)
                                         {
                                             extIndex = 1;   //each row reset Ext? Columns
-                                            if (row["Name"] == null || row["Name"].ToString().Trim() == "") continue;
+                                            if (row["Name"] == null || row["Name"].ToString().Trim() == "")
+                                            {
+                                                throw new ApplicationException("Name컬럼이 존재하지 않습니다");
+                                                //continue;
+                                            }
 
                                             var instance = Activator.CreateInstance(tmpClass);
                                             var properties = tmpClass.GetProperties();
@@ -378,7 +390,11 @@ namespace MyWeb.Processor
                                                         if ((property.PropertyType == typeof(DateTime)) ||
                                                             (property.PropertyType == typeof(DateTime?)))
                                                         {
-                                                            DateTime? nullableDate = null;
+                                                            //DateTime? nullableDate = null;
+
+                                                            //min DateTime
+                                                            DateTime nullableDate = new DateTime(1900, 1, 1);
+
                                                             property.SetValue(instance, nullableDate);
                                                         }
                                                         else if (!dbProperty.CanBeNull)
@@ -422,8 +438,12 @@ namespace MyWeb.Processor
                                                         if ((val.GetType() == typeof(DateTime)) ||
                                                             (val.GetType() == typeof(DateTime?)))
                                                         {
+                                                            //nullable DateTime
+                                                            //DateTime? nullableDate = (DateTime)val;                                                            
 
-                                                            DateTime? nullableDate = (DateTime)val;
+                                                            //min DateTime
+                                                            DateTime nullableDate = new DateTime(1900, 1, 1);
+
                                                             property.SetValue(instance, nullableDate);
                                                         }
                                                         else if ((property.PropertyType == typeof(DateTime)) ||

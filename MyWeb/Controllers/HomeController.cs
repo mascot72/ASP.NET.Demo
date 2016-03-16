@@ -50,7 +50,7 @@ namespace MyWeb.Controllers
 
             try
             {
-                string xlsPath = @"C:\workspace\resource\Cleansing (1st)";
+                string xlsPath = @"C:\workspace\resource\Cleansing (1st)\New Valuation";
                 var dir = new System.IO.DirectoryInfo(xlsPath);
                 IEnumerable<FileInfo> files = null;
                 if (dir.Exists)
@@ -71,7 +71,7 @@ namespace MyWeb.Controllers
                     }
                     else
                     {                        
-                        int workCount = 100;
+                        int workCount = 10;
 
                         if (fileName == string.Empty)
                         {
