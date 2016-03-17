@@ -368,11 +368,11 @@ namespace MyWeb.Processor
                     {
                         Name = files.Name,
                         Creator = "",
-                        CreateDate = files.CreationTime,
+                      //  CreateDate = files.CreationTime,
                         Extend = "",
-                        Path = files.DirectoryName,
+                        Path = files.DirectoryName,                        
                         Reason = "",
-                        Remark = "",
+                        Remark = "file Last write time at(" + files.LastWriteTime.ToShortDateString() +")",
                         ExtName = Cleaning(files.Extension),
                         Size = files.Length
                     };
