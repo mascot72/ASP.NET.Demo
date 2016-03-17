@@ -368,7 +368,7 @@ namespace MyWeb.Processor
                     {
                         Name = files.Name,
                         Creator = "",
-                      //  CreateDate = files.CreationTime,
+                        CreateDate = DateTime.Now,
                         Extend = "",
                         Path = files.DirectoryName,                        
                         Reason = "",
