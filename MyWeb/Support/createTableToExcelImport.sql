@@ -1,3 +1,4 @@
+--Excel File info
 CREATE TABLE [dbo].[FILE_IMPORT_INFO] (
 [ID] int PRIMARY KEY IDENTITY(1, 1) NOT NULL,
 [Path] nvarchar(500) NULL,
@@ -12,13 +13,21 @@ CREATE TABLE [dbo].[FILE_IMPORT_INFO] (
 [Size] bigint NULL)
 GO
 
+--추가컬럼정의
+create table VALU_EXCEL_EXT(
+[ID] varchar(10) primary key not null,
+[Name] varchar(255) not null,
+[CreateDate] datetime not null default(getdate())
+)
+GO
 
+--Excel Import Data
 CREATE TABLE [dbo].[VALU_EXCEL] (
 [ID] int PRIMARY KEY IDENTITY(1, 1) NOT NULL,
 [FileID] int NULL,
 [EID] varchar(255) NULL,
-[InvenNo] varchar(255) NULL,
-[SGNo] float NULL,
+[InvenNo] float NULL,
+[SGNo] varchar(255) NULL,
 [TID] varchar(255) NULL,
 [Date] datetime NULL,
 [Name] nvarchar(255) NULL,
@@ -104,6 +113,26 @@ CREATE TABLE [dbo].[VALU_EXCEL] (
 [Ext28] nvarchar(200) NULL,
 [Ext29] nvarchar(200) NULL,
 [Ext30] nvarchar(200) NULL,
+[Ext31] nvarchar(200) NULL,
+[Ext32] nvarchar(200) NULL,
+[Ext33] nvarchar(200) NULL,
+[Ext34] nvarchar(200) NULL,
+[Ext35] nvarchar(200) NULL,
+[Ext36] nvarchar(200) NULL,
+[Ext37] nvarchar(200) NULL,
+[Ext38] nvarchar(200) NULL,
+[Ext39] nvarchar(200) NULL,
+[Ext40] nvarchar(200) NULL,
+[Ext41] nvarchar(200) NULL,
+[Ext42] nvarchar(200) NULL,
+[Ext43] nvarchar(200) NULL,
+[Ext44] nvarchar(200) NULL,
+[Ext45] nvarchar(200) NULL,
+[Ext46] nvarchar(200) NULL,
+[Ext47] nvarchar(200) NULL,
+[Ext48] nvarchar(200) NULL,
+[Ext49] nvarchar(200) NULL,
+[Ext50] nvarchar(200) NULL,
 [Reason] nvarchar(2000) NULL,
 [CreateDate] datetime NOT NULL default(getdate()),
 [Creator] varchar(255) NULL)

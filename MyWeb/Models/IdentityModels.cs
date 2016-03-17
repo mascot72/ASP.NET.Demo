@@ -31,5 +31,7 @@ namespace MyWeb.Models
         }
 
         public System.Data.Entity.DbSet<MyWeb.Models.Excel.ValuationModels> ValuationModels { get; set; }
+
+        public System.Data.Entity.DbSet<MyWeb.Models.ModelExtendColumn> ModelExtendColumns { get; set; }
     }
 }

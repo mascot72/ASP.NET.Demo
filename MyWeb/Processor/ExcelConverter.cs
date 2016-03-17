@@ -10,11 +10,15 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Office.Interop.Excel;
 using System.Text.RegularExpressions;
+using MyWeb.Models;
 
 namespace MyWeb.Processor
 {
     public class ExcelConverter
     {
+        //Members declare
+        string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+
         //개행문자제거
         private string Cleaning(string source, string deleteText = @"\W")   //"(?<!\r)\n"
         {
@@ -30,6 +34,7 @@ namespace MyWeb.Processor
                 throw;
             }
         }
+
         //Excel to DataSet변환(Office.Interop방식)
         public DataSet OfficeExcelTODataSet(string fileName, List<string> extCol)
         {
@@ -62,7 +67,7 @@ namespace MyWeb.Processor
                 System.Data.DataTable dt = new System.Data.DataTable("ExcelImportedData");
 
                 // must start with index = 1                
-                // 여기서 Header를 찾는 Logic구현한다.                
+                // Header의 Row위치를 찾는다(Header가 처음에 오지 않는 예외가 있음으로)
                 for (int a = 1; a <= vertical; a++)
                 {
                     for (int i = 1; i <= horizontal; i++)
@@ -78,7 +83,7 @@ namespace MyWeb.Processor
                         }
 
                     }
-                    if (findedCount >= 3) //기본 Header를 모두 찾으면
+                    if (findedCount >= 3) //필수항목이 4개 이상이면 Header이다
                     {
                         headerIndex = a;
                         break;
@@ -99,7 +104,7 @@ namespace MyWeb.Processor
                                          where property.CanWrite
                                          select property);
 
-                    // get header information
+                    // Renerate DataColumn
                     int extIndex = 1;
                     for (int i = 1; i <= horizontal; i++)
                     {
@@ -121,6 +126,13 @@ namespace MyWeb.Processor
                                         dt.Columns.Add(new DataColumn("ProfitPercent", typeof(float)));
                                     }
                                     else {
+                                        //Add 확장정보
+                                        var extList = GetModelExtendList();
+                                        AddModelExtend(new ModelExtendColumn() {
+                                            ID = "Ext" + extList.Count(),
+                                            Name = column
+                                        });
+
                                         extCol.Add(column);
                                         dt.Columns.Add(new DataColumn("Ext" + extIndex++)); //중복
                                     }
@@ -129,7 +141,6 @@ namespace MyWeb.Processor
                                 {
                                     if (property != null)
                                     {
-
                                         //if (property.PropertyType == typeof(System.DateTime))ㄷ
                                         //{
                                         //    dt.Columns.Add(new DataColumn(column, typeof(DateTime)));
@@ -148,7 +159,7 @@ namespace MyWeb.Processor
                 }
 
                 if (dt.Columns.Count < horizontal)
-                    throw new ApplicationException("Header가 공백이어서 처리할 수 없습니다");
+                    throw new ApplicationException("Header에 공백Column이 나와서 처리 할 수 없습니다!");
 
                 // Get the row information
                 //for (int a = (headerIndex + 1); a <= vertical; a++)
@@ -163,6 +174,7 @@ namespace MyWeb.Processor
                 //    dt.Rows.Add(row);
                 //}
 
+                // 각 행별로 맞는 Type에 맞게 처리
                 for (int a = (headerIndex + 1); a <= vertical; a++) //행
                 {
                     /*
@@ -198,7 +210,10 @@ namespace MyWeb.Processor
                             {
                                 try
                                 {
-                                    row[b - 1] = myValues.GetValue(a, b);
+                                    if (myValues.GetValue(a, b) != null)
+                                    {
+                                        row[b - 1] = myValues.GetValue(a, b).ToString().Trim();
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
@@ -238,17 +253,71 @@ namespace MyWeb.Processor
             return ds;
         }
 
-        public IEnumerable<MyWeb.Models.FileImport> GetFileTable()
+        //파일입력정보
+        public IEnumerable<FileImport> GetFileTable()
         {
             try
-            {
-                string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+            {   
                 IEnumerable<MyWeb.Models.FileImport> fileTable = null;
                 using (var dbContext = new DataContext(sqlDatabase))
                 {
                     fileTable = dbContext.GetTable<MyWeb.Models.FileImport>().ToList();
                     //.ExecuteQuery<MyWeb.Models.FileImport>("SELECT ID, Path, Name, Extname, Result, Reason, Remark, Extend, CreateDate, Creator, Size FROM FILE_IMPORT_INFO");
                     
+                }
+                return fileTable;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        //확장정보 목록조회
+        public IEnumerable<ModelExtendColumn> GetModelExtendList()
+        {
+            try
+            {
+                IEnumerable<ModelExtendColumn> fileTable = null;
+                using (var dbContext = new DataContext(sqlDatabase))
+                {
+                    fileTable = dbContext.GetTable<ModelExtendColumn>().ToList();
+                }
+                return fileTable;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }            
+        }
+
+        //확장정보 등록
+        public ModelExtendColumn AddModelExtend(ModelExtendColumn column)
+        {
+            try
+            {
+                using (var dbContext = new ApplicationDbContext())
+                {
+                    dbContext.ModelExtendColumns.Add(column);
+                    dbContext.SaveChanges();
+                }
+                return column;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        //모델확장컬럼정보
+        public IEnumerable<ModelExtendColumn> GetModelExtend()
+        {
+            try
+            {
+                IEnumerable<MyWeb.Models.ModelExtendColumn> fileTable = null;
+                using (var dbContext = new DataContext(sqlDatabase))
+                {
+                    fileTable = dbContext.GetTable<MyWeb.Models.ModelExtendColumn>().ToList();
                 }
                 return fileTable;
             }
@@ -269,9 +338,7 @@ namespace MyWeb.Processor
         /// <param name="fileName"></param>
         /// <returns></returns>
         public DataSet ExcelToDB(string fileName, List<string> extCol)
-        {
-
-            string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+        {            
             string classNamespace = "MyWeb.Models.Excel";
 
             var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
@@ -381,8 +448,20 @@ namespace MyWeb.Processor
                                                     {
                                                         //Ext누적한다.
                                                         //List<string> extCol = new List<string>();
-                                                        var n = 0;
+
                                                         bool exists = false;
+
+                                                        //Add 확장정보
+                                                        var extList = GetModelExtendList();
+                                                        var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).First();
+                                                        if (entity != null)
+                                                        {
+                                                            row[entity.ID] = row[col.ColumnName];
+                                                            exists = true;
+                                                        }
+
+                                                        //기본방식(Text)
+                                                        var n = 0;                                                        
                                                         foreach (string ext in extCol)
                                                         {
                                                             n++;
@@ -397,6 +476,13 @@ namespace MyWeb.Processor
                                                         if (!exists)
                                                         {
                                                             if (extCol.Count > 30) throw new ApplicationException("Ext컬럼이 30개가 넘어서 현재파일은 Rollback합니다");
+
+                                                            //확장정보추가
+                                                            AddModelExtend(new ModelExtendColumn()
+                                                            {
+                                                                ID = "Ext" + extList.Count(),
+                                                                Name = col.ColumnName
+                                                            });
 
                                                             extCol.Add(col.ColumnName);
                                                             string extName = "Ext" + (extCol.Count);
@@ -607,8 +693,7 @@ namespace MyWeb.Processor
             System.Data.DataTable dt = new System.Data.DataTable("ExcelImportedData");
             ds.Tables.Add(dtFile);
             ds.Tables.Add(dt);
-
-            string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+            
             string xlsxFile = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0}; Extended Properties='Excel 12.0;HDR=YES';";   //엑셀 2007 
             string classNamespace = "MyWeb.Models.Excel";
             string connectionString = xlsxFile;

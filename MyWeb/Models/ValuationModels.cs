@@ -4,6 +4,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MyWeb.Models
 {
+    [Table(Name = "VALU_EXCEL_EXT")]
+    public class ModelExtendColumn
+    {
+        //Primary Key column
+        [Column(CanBeNull = false, DbType = "varchar(10)",
+        Name = "ID", IsPrimaryKey = true)]
+        public string ID { get; set; }
+
+        [Column(CanBeNull = true, DbType = "nvarchar(255)", Name = "Name", IsPrimaryKey = false)]
+        [Display(Name = "Name")]
+        public string Name { get; set; }
+
+        [Column(CanBeNull = true, DbType = "datetime", Name = "CreateDate", IsPrimaryKey = false)]
+        [Display(Name = "CreateDate")]
+        public DateTime? CreateDate { get; set; }
+    }
+
     [Table(Name = "FILE_IMPORT_INFO")]
     public class FileImport
     {
@@ -73,15 +90,15 @@ namespace MyWeb.Models.Excel
         //Regular columns
         [Column(CanBeNull = true, DbType = "varchar(255)", Name = "EID", IsPrimaryKey = false)]
         [Display(Name = "EID")]
-        public string EID { get; set; }        
+        public string EID { get; set; }
 
         [Display(Name = "Inven No.")]
         [Column(CanBeNull = true, DbType = "varchar(255)", IsPrimaryKey = false)]
         public string InvenNo { get; set; }
 
         [Display(Name = "SG No.")]
-        [Column(CanBeNull = true, DbType = "float", IsPrimaryKey = false)]
-        public Double SGNo { get; set; }
+        [Column(CanBeNull = true, DbType = "varchar(255)", IsPrimaryKey = false)]
+        public string SGNo { get; set; }
 
         [Display(Name = "TID")]
         [Column(CanBeNull = true, DbType = "varchar(255)", IsPrimaryKey = false)]
@@ -327,7 +344,7 @@ namespace MyWeb.Models.Excel
         [Display(Name = "Ext6")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext6 { get; set; }
-        
+
         [Display(Name = "Ext7")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext7 { get; set; }
@@ -387,7 +404,7 @@ namespace MyWeb.Models.Excel
         [Display(Name = "Ext21")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext21 { get; set; }
-        
+
         [Display(Name = "Ext22")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext22 { get; set; }
@@ -411,7 +428,7 @@ namespace MyWeb.Models.Excel
         [Display(Name = "Ext27")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext27 { get; set; }
-        
+
         [Display(Name = "Ext28")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext28 { get; set; }
