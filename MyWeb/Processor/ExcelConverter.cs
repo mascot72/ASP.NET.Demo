@@ -11,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.Office.Interop.Excel;
 using System.Text.RegularExpressions;
 using MyWeb.Models;
+using System.Collections;
 
 namespace MyWeb.Processor
 {
@@ -35,7 +36,7 @@ namespace MyWeb.Processor
         }
 
         //Excel to DataSet변환(Office.Interop방식)
-        public DataSet OfficeExcelTODataSet(string fileName, List<string> extCol)
+        public DataSet OfficeExcelTODataSet(string fileName)
         {
             var findedCount = 0;
             char spliter = ',';
@@ -103,9 +104,8 @@ namespace MyWeb.Processor
                                          where property.CanWrite
                                          select property);
 
-                    // Generate DataColumn
-                    int extIndex = 1;
-                    for (int i = 1; i <= horizontal; i++)
+                    // Generate DataColumn(Cleanning)
+                    for (int i = 1; i <= horizontal; i++)   //Excel의 컬럼만큼 Loop
                     {
                         if (myValues.GetValue(headerIndex, i) != null)
                         {
@@ -113,47 +113,40 @@ namespace MyWeb.Processor
                             if (columnName.Length > 0)
                             {
                                 var column = Cleaning(columnName);
+
                                 var property = propertyQuery.Where(e => e.Name.ToUpper() == column.ToUpper()).FirstOrDefault();
-                                if (dt.Columns.Contains(column))  //컬럼이 존재시(중복일 경우)
+
+                                int idxColumn = dt.Columns.IndexOf(column);
+                                if (idxColumn > -1 && dt.Columns[idxColumn].ColumnName == column)  //컬럼이 존재시(중복일 경우)
                                 {
                                     if (column == "Comment")
                                     {
-                                        dt.Columns.Add(new DataColumn(column + "_1", property.PropertyType));
+                                        if (dt.Columns.Contains("Comment_1"))  //컬럼이 존재시(중복일 경우)
+                                            throw new ApplicationException(string.Format("중복 Column({0})이 발생하여서 처리하지 못합니다", columnName));
+                                        else
+                                            dt.Columns.Add(new DataColumn(column + "_1", property.PropertyType));
                                     }
                                     else if ("Profit%".ToUpper().Contains(columnName.ToUpper()))
                                     {
-                                        dt.Columns.Add(new DataColumn("ProfitPercent", typeof(float)));
+                                        if (dt.Columns.Contains("ProfitPercent"))  //컬럼이 존재시(중복일 경우)
+                                            throw new ApplicationException(string.Format("중복 Column({0})이 발생하여서 처리하지 못합니다", columnName));
+                                        else
+                                            dt.Columns.Add(new DataColumn("ProfitPercent", typeof(float)));
                                     }
                                     else {
-
                                         throw new ApplicationException(string.Format("중복 Column({0})이 발생하여서 처리하지 못합니다", columnName));
-
-                                        /*
-                                        //Add 확장정보
-                                        var extList = GetModelExtendList();
-                                        AddModelExtend(new ModelExtendColumn() {
-                                            ID = "Ext" + extList.Count()+1,
-                                            Name = column
-                                        });
-
-                                        extCol.Add(column);
-                                        dt.Columns.Add(new DataColumn("Ext" + extIndex++)); //중복
-                                        */
                                     }
                                 }
                                 else
                                 {
-                                    if (property != null)
+                                    if (property != null)   //속성과 일치하는 Excel컬럼 일 때
                                     {
-                                        //if (property.PropertyType == typeof(System.DateTime))
-                                        //{
-                                        //    dt.Columns.Add(new DataColumn(column, typeof(DateTime)));
-                                        //}
-                                        //else
                                         dt.Columns.Add(new DataColumn(column, property.PropertyType));
                                     }
                                     else
-                                        dt.Columns.Add(new DataColumn(column, typeof(object))); //속성에 없는 컬럼이 나올때.
+                                    {
+                                        dt.Columns.Add(new DataColumn(column, typeof(object))); //속성에 없는 Excel컬럼이 나올때.
+                                    }
                                 }
                             }
                         }
@@ -165,75 +158,37 @@ namespace MyWeb.Processor
                 if (dt.Columns.Count < horizontal)
                     throw new ApplicationException("Header에 공백Column이 나와서 처리 할 수 없습니다!");
 
-                // Get the row information
-                //for (int a = (headerIndex + 1); a <= vertical; a++)
-                //{
-                //    object[] poop = new object[horizontal];
-                //    for (int b = 1; b <= horizontal; b++)
-                //    {
-                //        poop[b - 1] = myValues.GetValue(a, b);
-                //    }
-                //    DataRow row = dt.NewRow();
-                //    row.ItemArray = poop;
-                //    dt.Rows.Add(row);
-                //}
-
-                // 각 행별로 맞는 Type에 맞게 처리
-                for (int a = (headerIndex + 1); a <= vertical; a++) //행
+                // Excel Data 복사
+                for (int a = (headerIndex + 1); a <= vertical; a++) //Excel행만큼 Loop
                 {
-                    /*
-                    object[] poop = new object[horizontal];
-                    for (int b = 1; b <= horizontal; b++)   //열
-                    {
-                        poop[b - 1] = myValues.GetValue(a, b);
-                    }
-                    DataRow row = dt.NewRow();
-                    row.ItemArray = poop;
-                    dt.Rows.Add(row);
-                    */
-
                     DataRow row = dt.NewRow();
                     string message = "";
-                    for (int b = 1; b <= horizontal; b++)
+                    for (int b = 1; b <= horizontal; b++)   //Excel컬럼만큼 Loop
                     {
                         if (myValues.GetValue(a, b) != null)
                         {
-                            if (dt.Columns[b - 1].DataType == typeof(DateTime))
+                            try
                             {
-                                try
+                                if (dt.Columns[b - 1].DataType == typeof(DateTime))
                                 {
-                                    var val = DateTime.FromOADate((double)myValues.GetValue(a, b));
-                                    row[b - 1] = val;
+                                    row[b - 1] = DateTime.FromOADate((double)myValues.GetValue(a, b));
                                 }
-                                catch (Exception ex)
+                                else
                                 {
-                                    message += (message != null && message.Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index(" + a + ", " + b + ") orginalValue=" + myValues.GetValue(a, b) + "}";
+                                    row[b - 1] = myValues.GetValue(a, b).ToString().Trim();
                                 }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                try
-                                {
-                                    if (myValues.GetValue(a, b) != null)
-                                    {
-                                        row[b - 1] = myValues.GetValue(a, b).ToString().Trim();
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    message += (message != null && message.Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index(" + a + ", " + b + ") orginalValue=" + myValues.GetValue(a, b) + "}";
-                                }
-
+                                message += (message != null && message.Length > 0 ? "|" : "") + "ERROR{" + ex.Message + ", index(" + a + ", " + b + ") orginalValue=" + myValues.GetValue(a, b) + "}";
                             }
                         }
-
                     }
                     if (message.Length > 0)
                         throw new ApplicationException(message);
 
                     dt.Rows.Add(row);
                 }
-
 
                 ds.Tables.Add(dt);
 
@@ -295,6 +250,35 @@ namespace MyWeb.Processor
             }
         }
 
+        //Upload후처리(DB Update)
+        public int UpdateAfter()
+        {
+            try
+            {
+                int result = 0;
+                using (var dbContext = new DataContext(sqlDatabase))
+                {
+                    result = dbContext.ExecuteCommand(@"
+update VALU_EXCEL
+set BuyDate = null
+where convert(varchar(10), BuyDate, 126) = '1900-01-01'
+
+update VALU_EXCEL
+set SellDate = null
+where convert(varchar(10), SellDate, 126) = '1900-01-01'
+
+update VALU_EXCEL
+set Date = null
+where convert(varchar(10), Date, 126) = '1900-01-01'");
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         //확장정보 등록
         public ModelExtendColumn AddModelExtend(ModelExtendColumn column)
         {
@@ -348,14 +332,20 @@ namespace MyWeb.Processor
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public DataSet ExcelToDB(string fileName, List<string> extCol)
+        public DataSet ExcelToDB(string fileName, int[] success)
         {
             string classNamespace = "MyWeb.Models.Excel";
+            
+            if (success == null)
+            {
+                int[] aa = { 0, 0 };
+                success = aa;
+            }
 
             var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
             var filesToProcess = fileName;
-            int extIndex = 1;
             int idx = 0;
+            int successFileCount = 0;
 
             using (var dbContext = new DataContext(sqlDatabase))
             {
@@ -383,7 +373,8 @@ namespace MyWeb.Processor
                         Extend = "",
                         Path = files.DirectoryName,
                         Reason = "",
-                        Remark = "file Last write time at(" + files.LastWriteTime.ToShortDateString() + ")",
+                        Result = "P",
+                        Remark = "file Last write time at(" + files.LastWriteTime.ToString() + ")",
                         ExtName = Cleaning(files.Extension),
                         Size = files.Length
                     };
@@ -401,15 +392,25 @@ namespace MyWeb.Processor
 
                             if (attributes.Any())
                             {
+                                
+                                var instanceMst = Activator.CreateInstance(tmpClass);
+                                var propertiesMst = tmpClass.GetProperties();
+                                var propertyQueryMst = (from property in propertiesMst
+                                                     where property.CanWrite
+                                                     select property);
+
                                 var tableName = ((TableAttribute)attributes[0]).Name;
 
-                                using (var myDataSet = OfficeExcelTODataSet(fileName, extCol))
+                                using (var myDataSet = OfficeExcelTODataSet(fileName))
                                 {
                                     //1. try catch해서 문제있으면 fileInfo에 저장후 마침
 
                                     // The data table will have the same name
                                     using (var dataTable = myDataSet.Tables[1])
                                     {
+                                        //<==================================================================
+                                        //컬럼 정의
+                                        //1. 추가컬럼 등록
                                         //Copy Datatable
                                         var currDataTable = dataTable.Copy();
                                         if (!currDataTable.Columns.Contains("Reason"))
@@ -428,28 +429,59 @@ namespace MyWeb.Processor
                                             }
                                         }
 
+                                        //2. 컬럼 예외처리-----------------------------------------------------------------------------------
+                                        var extList = GetModelExtendList();
+                                        foreach (DataColumn col in currDataTable.Columns)
+                                        {
+                                            //엑셀컬럼중 Model Property에 존재하지 않으면
+                                            if (propertyQueryMst.Count(e =>e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
+                                            {
+                                                if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper()) == false)
+                                                {
+                                                    //확장정보가 기존에 존재하는지 확인                                                    
+                                                    var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
+                                                    if (entity == null)
+                                                    {
+                                                        if (extList.Count() > 30) throw new ApplicationException("Ext컬럼이 30개가 넘어서 현재파일은 Rollback합니다");
+
+                                                        //확장정보추가
+                                                        var addExt = AddModelExtend(new ModelExtendColumn()
+                                                        {
+                                                            ID = "Ext" + (extList.Count() + 1),
+                                                            Name = col.ColumnName
+                                                        });
+                                                        
+                                                        fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + addExt.ID + ")";
+                                                        extList = GetModelExtendList(); //Reload from DB
+                                                    }
+
+                                                }
+                                            }
+                                        }//------------------------------------------------------------------------------------------------                               
+                                        //==================================================================>
+
                                         foreach (DataRow row in currDataTable.Rows)
                                         {
-                                            extIndex = 1;   //each row reset Ext? Columns
+                                            //each row reset Ext? Columns
                                             if (row["Name"] == null || row["Name"].ToString().Trim() == "")
                                             {
                                                 //throw new ApplicationException("Name컬럼이 존재하지 않습니다");
-                                                continue;
+                                                continue;   //병합된 컬럼이 존재시 이Row만 제외하고 통과해야 한다
                                             }
 
+                                            //속성
                                             var instance = Activator.CreateInstance(tmpClass);
                                             var properties = tmpClass.GetProperties();
-
                                             var propertyQuery = (from property in properties
                                                                  where property.CanWrite
                                                                  select property);
 
-                                            //Table mapping(Extended)...<!------------------------------
+                                            //Table mapping(Extended)...<!------------------------------                                            
                                             //dataColumn만큼 loop, if property not matched column then Ext++
                                             foreach (DataColumn col in currDataTable.Columns)
                                             {
                                                 //엑셀컬럼중 Model Property에 존재하지 않으면
-                                                if (propertyQuery.ToArray().Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).Count() < 1)
+                                                if (propertyQuery.Count(e =>e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
                                                 {
                                                     if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper()))
                                                     {
@@ -457,67 +489,17 @@ namespace MyWeb.Processor
                                                     }
                                                     else
                                                     {
-                                                        //Ext누적한다.
-                                                        //List<string> extCol = new List<string>();
-
-                                                        bool exists = false;
-
                                                         //확장정보가 기존에 존재하는지 확인
-                                                        var extList = GetModelExtendList();
                                                         var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
                                                         if (entity != null)
                                                         {
                                                             row[entity.ID] = row[col.ColumnName];
-                                                            exists = true;
                                                         }
-
-                                                        //기본방식(Text)
-                                                        /*
-                                                        var n = 0;
-                                                        foreach (string ext in extCol)
-                                                        {
-                                                            n++;
-                                                            if (ext.ToUpper().Contains(col.ColumnName.ToUpper()))  //Ext에 존재하면
-                                                            {
-                                                                string extName = "Ext" + (n);
-                                                                row[extName] = row[col.ColumnName];
-                                                                exists = true;
-                                                                break;
-                                                            }
-                                                        }
-                                                        */
-                                                        if (!exists)
-                                                        {
-                                                            if (extList.Count() > 30) throw new ApplicationException("Ext컬럼이 30개가 넘어서 현재파일은 Rollback합니다");
-
-                                                            //확장정보추가
-                                                            var addExt = AddModelExtend(new ModelExtendColumn()
-                                                            {
-                                                                ID = "Ext" + (extList.Count() + 1),
-                                                                Name = col.ColumnName
-                                                            });
-
-                                                            //extCol.Add(col.ColumnName);
-                                                            //string extName = "Ext" + (extCol.Count);
-                                                            //row[extName] = row[col.ColumnName];
-                                                            //fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + extName + ")";
-                                                            //row["Reason"] += (row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName + "(" + extName + ")";
-                                                            
-                                                            row[addExt.ID] = row[col.ColumnName];
-                                                            fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + addExt.ID + ")";
-                                                        }
-
-                                                        /*
-                                                        //Ext컬럼에 추가
-                                                        string currentExtColumnName = "Ext" + (extIndex++);
-                                                        row[currentExtColumnName] = row[col.ColumnName];
-                                                        row["Reason"] += (row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName;
-                                                        */
+                                                        
                                                     }
                                                 }
                                             }
                                             //---------------------------------------------------------->
-
 
                                             foreach (PropertyInfo property in propertyQuery)
                                             {
@@ -527,7 +509,8 @@ namespace MyWeb.Processor
 
                                                 if (dbProperty == null) continue;
 
-                                                if (currDataTable.Columns.Contains(property.Name))
+                                                int idxColumn = currDataTable.Columns.IndexOf(property.Name);
+                                                if (idxColumn > -1 && currDataTable.Columns[idxColumn].ColumnName == property.Name)  //컬럼이 존재시
                                                 {
                                                     var val = row[property.Name];
                                                     if (val == DBNull.Value)
@@ -626,18 +609,21 @@ namespace MyWeb.Processor
                                                 } // dbColumn exists
                                                 else
                                                 {
-                                                    if ("FileID".Contains(property.Name))   //파일ID Setting
+                                                    //if ("ID|Creator".Contains(property.Name)) continue;
+
+                                                    if ("FileID" == (property.Name))   //파일ID Setting
                                                     {
                                                         property.SetValue(instance, fileInfo.ID);
                                                     }
+                                                    /*
                                                     else {
                                                         //Ext add
                                                         try
                                                         {
-                                                            if (property.Name.ToUpper() == "WAREHOUSECOST")
-                                                            {
-                                                                break;
-                                                            }
+                                                            //if (property.Name.ToUpper() == "WAREHOUSECOST")
+                                                            //{
+                                                            //    break;
+                                                            //}
                                                             var val = row[property.Name];
                                                             if (val == DBNull.Value)
                                                             {
@@ -650,11 +636,12 @@ namespace MyWeb.Processor
                                                             property.SetValue(instance, val != null ? val.ToString().Trim() : "");
 
                                                         }
-                                                        catch (Exception)
+                                                        catch (Exception ex)
                                                         {
-
-                                                        }
+                                                            throw ex;
+                                                        }                                                        
                                                     }
+                                                    */
                                                 }
 
                                             } // property loop
@@ -668,16 +655,14 @@ namespace MyWeb.Processor
 
                                         // Submit changes.
                                         fileInfo.Result = "S";
-                                        string res = "";
-                                        foreach (string extStr in extCol)
-                                        {
-                                            res += (res.Length > 0 ? "|" : "") + extStr;
-                                        }
-                                        fileInfo.Remark = "Ext info:" + res;
                                         fileInfo.Reason = (idx).ToString();
                                         dbContext.SubmitChanges();
+                                        successFileCount++;
 
                                     } // using DataTable
+                                    
+                                    success[0] = successFileCount;
+                                    success[1] = idx;
 
                                     return myDataSet;
                                 } // using DataSet

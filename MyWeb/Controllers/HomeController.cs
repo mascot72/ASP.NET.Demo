@@ -38,7 +38,7 @@ namespace MyWeb.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Upload(HttpPostedFileBase upload, string isReadonly, int workCount = 1)
+        public ActionResult Upload(HttpPostedFileBase upload, string isReadonly, int workCount = 10)
         {
             var fileName = string.Empty;
 
@@ -75,9 +75,10 @@ namespace MyWeb.Controllers
                         int resultRows = 0;
                         List<string> extCol = new List<string>();
                         var fileTable = proc.GetFileTable();
+                        int[] result = { 0, 0 };
+
                         if (fileName == string.Empty)
                         {
-
                             foreach (var file in files)
                             {
                                 try
@@ -91,7 +92,7 @@ namespace MyWeb.Controllers
                                     string filefullName = file.FullName;
 
                                     if (workCount <= 0) break;
-                                    ds = proc.ExcelToDB(filefullName, extCol);
+                                    ds = proc.ExcelToDB(filefullName, result);
                                     workCount--;
                                     resultFiles += ds.Tables[0].Rows.Count;
                                     resultRows += ds.Tables[1].Rows.Count;
@@ -104,11 +105,10 @@ namespace MyWeb.Controllers
                         }
                         else
                         {
-                            ds = proc.ExcelToDB(fileName, extCol);
+                            ds = proc.ExcelToDB(fileName, result);
                         }
-
-                        ViewBag.Message = "Process File Count : " + resultFiles.ToString();
-                        ViewBag.Message += "\r\nProcessed Row Count : " + resultRows.ToString();
+                        proc.UpdateAfter(); //DB ㄷ후처리 작업수행
+                        ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", result[0], resultFiles, result[1], resultRows);
                     }
 
                     if (ds != null && ds.Tables.Count == 2)
