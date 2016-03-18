@@ -30,7 +30,6 @@ namespace MyWeb.Processor
             }
             catch (Exception)
             {
-
                 throw;
             }
         }
@@ -40,7 +39,7 @@ namespace MyWeb.Processor
         {
             var findedCount = 0;
             char spliter = ',';
-            string headerList = "EID,Inven,No.,SG No.,TID,Name";
+            string headerList = "EID,INVENNO,SGNO,TID,NAME";
             int headerCellCount = headerList.Split(spliter).Length;
             int headerIndex = 1;
 
@@ -75,8 +74,8 @@ namespace MyWeb.Processor
                         //일치하는 경우
                         if (myValues.GetValue(a, i) != null)
                         {
-                            columnName = myValues.GetValue(a, i).ToString().Trim();
-                            if (columnName.Length > 0 && headerList.IndexOf(columnName) > -1)
+                            columnName = Cleaning(myValues.GetValue(a, i).ToString().Trim());
+                            if (columnName.Length > 0 && headerList.IndexOf(columnName.ToUpper()) > -1)
                             {
                                 findedCount++;
                             }
@@ -104,7 +103,7 @@ namespace MyWeb.Processor
                                          where property.CanWrite
                                          select property);
 
-                    // Renerate DataColumn
+                    // Generate DataColumn
                     int extIndex = 1;
                     for (int i = 1; i <= horizontal; i++)
                     {
@@ -115,7 +114,7 @@ namespace MyWeb.Processor
                             {
                                 var column = Cleaning(columnName);
                                 var property = propertyQuery.Where(e => e.Name.ToUpper() == column.ToUpper()).FirstOrDefault();
-                                if (dt.Columns.Contains(column))  //컬럼이 존재시
+                                if (dt.Columns.Contains(column))  //컬럼이 존재시(중복일 경우)
                                 {
                                     if (column == "Comment")
                                     {
@@ -126,22 +125,27 @@ namespace MyWeb.Processor
                                         dt.Columns.Add(new DataColumn("ProfitPercent", typeof(float)));
                                     }
                                     else {
+
+                                        throw new ApplicationException(string.Format("중복 Column({0})이 발생하여서 처리하지 못합니다", columnName));
+
+                                        /*
                                         //Add 확장정보
                                         var extList = GetModelExtendList();
                                         AddModelExtend(new ModelExtendColumn() {
-                                            ID = "Ext" + extList.Count(),
+                                            ID = "Ext" + extList.Count()+1,
                                             Name = column
                                         });
 
                                         extCol.Add(column);
                                         dt.Columns.Add(new DataColumn("Ext" + extIndex++)); //중복
+                                        */
                                     }
                                 }
                                 else
                                 {
                                     if (property != null)
                                     {
-                                        //if (property.PropertyType == typeof(System.DateTime))ㄷ
+                                        //if (property.PropertyType == typeof(System.DateTime))
                                         //{
                                         //    dt.Columns.Add(new DataColumn(column, typeof(DateTime)));
                                         //}
@@ -257,13 +261,13 @@ namespace MyWeb.Processor
         public IEnumerable<FileImport> GetFileTable()
         {
             try
-            {   
+            {
                 IEnumerable<MyWeb.Models.FileImport> fileTable = null;
                 using (var dbContext = new DataContext(sqlDatabase))
                 {
                     fileTable = dbContext.GetTable<MyWeb.Models.FileImport>().ToList();
                     //.ExecuteQuery<MyWeb.Models.FileImport>("SELECT ID, Path, Name, Extname, Result, Reason, Remark, Extend, CreateDate, Creator, Size FROM FILE_IMPORT_INFO");
-                    
+
                 }
                 return fileTable;
             }
@@ -288,7 +292,7 @@ namespace MyWeb.Processor
             catch (Exception ex)
             {
                 throw ex;
-            }            
+            }
         }
 
         //확장정보 등록
@@ -296,12 +300,16 @@ namespace MyWeb.Processor
         {
             try
             {
-                using (var dbContext = new ApplicationDbContext())
+                ModelExtendColumn result = null;
+                using (var dbContext = new DataContext(sqlDatabase))
                 {
-                    dbContext.ModelExtendColumns.Add(column);
-                    dbContext.SaveChanges();
+                    if (GetModelExtend(column.Name).Count() == 0)
+                    {
+                        dbContext.ExecuteCommand("INSERT INTO VALU_EXCEL_EXT(ID, Name) VALUES({0}, {1})", column.ID, column.Name);
+                    }
+                    result = dbContext.GetTable<ModelExtendColumn>().Where(e => e.ID == column.ID).First();
                 }
-                return column;
+                return result;
             }
             catch (Exception ex)
             {
@@ -310,14 +318,17 @@ namespace MyWeb.Processor
         }
 
         //모델확장컬럼정보
-        public IEnumerable<ModelExtendColumn> GetModelExtend()
+        public IEnumerable<ModelExtendColumn> GetModelExtend(string name)
         {
             try
             {
                 IEnumerable<MyWeb.Models.ModelExtendColumn> fileTable = null;
                 using (var dbContext = new DataContext(sqlDatabase))
                 {
-                    fileTable = dbContext.GetTable<MyWeb.Models.ModelExtendColumn>().ToList();
+                    if (name != null)
+                        fileTable = dbContext.GetTable<MyWeb.Models.ModelExtendColumn>().Where(e => e.Name == name).ToList();
+                    else
+                        fileTable = dbContext.GetTable<MyWeb.Models.ModelExtendColumn>().ToList();
                 }
                 return fileTable;
             }
@@ -338,7 +349,7 @@ namespace MyWeb.Processor
         /// <param name="fileName"></param>
         /// <returns></returns>
         public DataSet ExcelToDB(string fileName, List<string> extCol)
-        {            
+        {
             string classNamespace = "MyWeb.Models.Excel";
 
             var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
@@ -364,15 +375,15 @@ namespace MyWeb.Processor
                         break;
                     }
 
-                    MyWeb.Models.FileImport fileInfo = new Models.FileImport()
+                    FileImport fileInfo = new FileImport()
                     {
                         Name = files.Name,
                         Creator = "",
                         CreateDate = DateTime.Now,
                         Extend = "",
-                        Path = files.DirectoryName,                        
+                        Path = files.DirectoryName,
                         Reason = "",
-                        Remark = "file Last write time at(" + files.LastWriteTime.ToShortDateString() +")",
+                        Remark = "file Last write time at(" + files.LastWriteTime.ToShortDateString() + ")",
                         ExtName = Cleaning(files.Extension),
                         Size = files.Length
                     };
@@ -451,9 +462,9 @@ namespace MyWeb.Processor
 
                                                         bool exists = false;
 
-                                                        //Add 확장정보
+                                                        //확장정보가 기존에 존재하는지 확인
                                                         var extList = GetModelExtendList();
-                                                        var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).First();
+                                                        var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
                                                         if (entity != null)
                                                         {
                                                             row[entity.ID] = row[col.ColumnName];
@@ -461,7 +472,8 @@ namespace MyWeb.Processor
                                                         }
 
                                                         //기본방식(Text)
-                                                        var n = 0;                                                        
+                                                        /*
+                                                        var n = 0;
                                                         foreach (string ext in extCol)
                                                         {
                                                             n++;
@@ -473,21 +485,26 @@ namespace MyWeb.Processor
                                                                 break;
                                                             }
                                                         }
+                                                        */
                                                         if (!exists)
                                                         {
-                                                            if (extCol.Count > 30) throw new ApplicationException("Ext컬럼이 30개가 넘어서 현재파일은 Rollback합니다");
+                                                            if (extList.Count() > 30) throw new ApplicationException("Ext컬럼이 30개가 넘어서 현재파일은 Rollback합니다");
 
                                                             //확장정보추가
-                                                            AddModelExtend(new ModelExtendColumn()
+                                                            var addExt = AddModelExtend(new ModelExtendColumn()
                                                             {
-                                                                ID = "Ext" + extList.Count(),
+                                                                ID = "Ext" + (extList.Count() + 1),
                                                                 Name = col.ColumnName
                                                             });
 
-                                                            extCol.Add(col.ColumnName);
-                                                            string extName = "Ext" + (extCol.Count);
-                                                            row[extName] = row[col.ColumnName];
-                                                            row["Reason"] += (row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName + "(" + extName + ")";
+                                                            //extCol.Add(col.ColumnName);
+                                                            //string extName = "Ext" + (extCol.Count);
+                                                            //row[extName] = row[col.ColumnName];
+                                                            //fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + extName + ")";
+                                                            //row["Reason"] += (row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName + "(" + extName + ")";
+                                                            
+                                                            row[addExt.ID] = row[col.ColumnName];
+                                                            fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + addExt.ID + ")";
                                                         }
 
                                                         /*
@@ -693,7 +710,7 @@ namespace MyWeb.Processor
             System.Data.DataTable dt = new System.Data.DataTable("ExcelImportedData");
             ds.Tables.Add(dtFile);
             ds.Tables.Add(dt);
-            
+
             string xlsxFile = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0}; Extended Properties='Excel 12.0;HDR=YES';";   //엑셀 2007 
             string classNamespace = "MyWeb.Models.Excel";
             string connectionString = xlsxFile;
