@@ -19,6 +19,7 @@ namespace MyWeb.Processor
     {
         //Members declare
         string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
+        int extCount = 50;  //추가컬럼갯수
 
         //개행문자제거
         private string Cleaning(string source, string deleteText = @"\W")   //"(?<!\r)\n"
@@ -48,18 +49,19 @@ namespace MyWeb.Processor
             System.Data.DataTable dataTable = new System.Data.DataTable("ExcelImportFileInfo");
             ds.Tables.Add(dataTable);
 
+            var missing = System.Reflection.Missing.Value;
+
+            Application app = new Microsoft.Office.Interop.Excel.Application();
+
+            //파일읽기
+            Workbook workbook = app.Workbooks.Open(fileName, false, true, missing, missing, missing, true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, '\t', false, false, 0, false, true, 0);
+            Worksheet worksheet = workbook.Worksheets[1] as Microsoft.Office.Interop.Excel.Worksheet; worksheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Worksheets.get_Item(1);
+
+            Range xlRange = worksheet.UsedRange;
+            Array myValues = (Array)xlRange.Cells.Value2;
+
             try
             {
-                var missing = System.Reflection.Missing.Value;
-
-                Application app = new Microsoft.Office.Interop.Excel.Application();
-
-                //파일읽기
-                Workbook workbook = app.Workbooks.Open(fileName, false, true, missing, missing, missing, true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, '\t', false, false, 0, false, true, 0);
-                Worksheet worksheet = workbook.Worksheets[1] as Microsoft.Office.Interop.Excel.Worksheet; worksheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Worksheets.get_Item(1);
-
-                Range xlRange = worksheet.UsedRange;
-                Array myValues = (Array)xlRange.Cells.Value2;
 
                 int vertical = myValues.GetLength(0);
                 int horizontal = myValues.GetLength(1);
@@ -165,7 +167,7 @@ namespace MyWeb.Processor
                     string message = "";
                     for (int b = 1; b <= horizontal; b++)   //Excel컬럼만큼 Loop
                     {
-                        if (myValues.GetValue(a, b) != null)
+                        if (myValues.GetValue(a, b) != null && myValues.GetValue(a, b).ToString().Trim() != string.Empty)
                         {
                             try
                             {
@@ -195,18 +197,19 @@ namespace MyWeb.Processor
                 //File info insert
                 DataRow pRow = dataTable.NewRow();
                 dataTable.Rows.Add(pRow);
-
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
                 workbook.Close(true, missing, missing);
                 app.Quit();
 
                 releaseObject(worksheet);
                 releaseObject(workbook);
                 releaseObject(app);
-
-            }
-            catch (Exception ex)
-            {
-                throw ex;
             }
 
             return ds;
@@ -335,7 +338,8 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
         public DataSet ExcelToDB(string fileName, int[] success)
         {
             string classNamespace = "MyWeb.Models.Excel";
-            
+            var extList = GetModelExtendList();
+
             if (success == null)
             {
                 int[] aa = { 0, 0 };
@@ -392,12 +396,12 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
 
                             if (attributes.Any())
                             {
-                                
+
                                 var instanceMst = Activator.CreateInstance(tmpClass);
                                 var propertiesMst = tmpClass.GetProperties();
                                 var propertyQueryMst = (from property in propertiesMst
-                                                     where property.CanWrite
-                                                     select property);
+                                                        where property.CanWrite
+                                                        select property);
 
                                 var tableName = ((TableAttribute)attributes[0]).Name;
 
@@ -417,32 +421,34 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                         {
                                             currDataTable.Columns.Add("Reason");
                                         }
-                                        for (int i = 0; i < 30; i++)
+                                        
+                                        for (int i = 0; i < extCount; i++)
                                         {
-                                            if (currDataTable.Columns.Contains("Ext" + (i + 1)))
+                                            string extId = "Ext" + (i + 1);
+                                            int idxColumn = currDataTable.Columns.IndexOf(extId);
+                                            if (idxColumn > -1 && currDataTable.Columns[idxColumn].ColumnName == extId)  //컬럼이 존재시(중복일 경우)
                                             {
                                                 continue;
                                             }
                                             else
                                             {
-                                                currDataTable.Columns.Add("Ext" + (i + 1));
+                                                currDataTable.Columns.Add(extId);
                                             }
                                         }
 
-                                        //2. 컬럼 예외처리-----------------------------------------------------------------------------------
-                                        var extList = GetModelExtendList();
+                                        //2. 컬럼 예외처리------------------------------------------------------------------------------ 
                                         foreach (DataColumn col in currDataTable.Columns)
                                         {
                                             //엑셀컬럼중 Model Property에 존재하지 않으면
-                                            if (propertyQueryMst.Count(e =>e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
+                                            if (propertyQueryMst.Count(e => e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
                                             {
                                                 if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper()) == false)
                                                 {
                                                     //확장정보가 기존에 존재하는지 확인                                                    
                                                     var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
-                                                    if (entity == null)
+                                                    if (entity == null && !col.ColumnName.StartsWith("Ext"))
                                                     {
-                                                        if (extList.Count() > 30) throw new ApplicationException("Ext컬럼이 30개가 넘어서 현재파일은 Rollback합니다");
+                                                        if (extList.Count() >= extCount) throw new ApplicationException("Ext컬럼이 " + extCount + "개가 넘어서 현재파일은 Rollback합니다");
 
                                                         //확장정보추가
                                                         var addExt = AddModelExtend(new ModelExtendColumn()
@@ -450,7 +456,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                             ID = "Ext" + (extList.Count() + 1),
                                                             Name = col.ColumnName
                                                         });
-                                                        
+
                                                         fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + addExt.ID + ")";
                                                         extList = GetModelExtendList(); //Reload from DB
                                                     }
@@ -481,7 +487,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                             foreach (DataColumn col in currDataTable.Columns)
                                             {
                                                 //엑셀컬럼중 Model Property에 존재하지 않으면
-                                                if (propertyQuery.Count(e =>e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
+                                                if (propertyQuery.Count(e => e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
                                                 {
                                                     if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper()))
                                                     {
@@ -495,7 +501,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                         {
                                                             row[entity.ID] = row[col.ColumnName];
                                                         }
-                                                        
+
                                                     }
                                                 }
                                             }
@@ -660,7 +666,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                         successFileCount++;
 
                                     } // using DataTable
-                                    
+
                                     success[0] = successFileCount;
                                     success[1] = idx;
 

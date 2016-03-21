@@ -97,8 +97,8 @@ namespace MyWeb.Models.Excel
         public string InvenNo { get; set; }
 
         [Display(Name = "SG No.")]
-        [Column(CanBeNull = true, DbType = "varchar(255)", IsPrimaryKey = false)]
-        public string SGNo { get; set; }
+        [Column(CanBeNull = true, DbType = "float", IsPrimaryKey = false)]
+        public Double SGNo { get; set; }
 
         [Display(Name = "TID")]
         [Column(CanBeNull = true, DbType = "varchar(255)", IsPrimaryKey = false)]
