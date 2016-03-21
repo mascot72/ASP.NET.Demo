@@ -38,9 +38,11 @@ namespace MyWeb.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Upload(HttpPostedFileBase upload, string isReadonly, int workCount = 10)
+        public ActionResult Upload(HttpPostedFileBase upload, string isReadonly, int workCount = 10, string processState = "", string folderPath = "")
         {
             var fileName = string.Empty;
+            int targetFiles = 0;
+            int targetRows = 0;
 
             if (upload != null && upload.FileName != null)
             {
@@ -51,6 +53,8 @@ namespace MyWeb.Controllers
             try
             {
                 string xlsPath = @"C:\workspace\resource\Cleansing (1st)\New Valuation";
+                if (folderPath != "") xlsPath = folderPath;
+
                 var dir = new System.IO.DirectoryInfo(xlsPath);
                 IEnumerable<FileInfo> files = null;
                 if (dir.Exists)
@@ -83,19 +87,27 @@ namespace MyWeb.Controllers
                             {
                                 try
                                 {
-                                    //완료된 파일은 제외!
-                                    if (fileTable.Where(e => e.Name == file.Name).Count() > 0)
-                                    {
-                                        continue;
-                                    }
-
+                                    //Error항목처리시
                                     string filefullName = file.FullName;
+                                    
+                                    if (processState != "")
+                                    {
+                                        if (fileTable.Where(e => e.Result == processState && e.Name == file.Name).Count() == 0)  //오류났던 항목이면 처리
+                                        {
+                                            continue;
+                                        }
+                                    }
+                                    else if (fileTable.Where(e => e.Name == file.Name).Count() > 0)
+                                    {
+                                        continue;   //완료된 파일은 제외!(Error완료항목 요청이 아니고 기존에 존재시 통과)
+                                    }                                    
 
                                     if (workCount <= 0) break;
                                     ds = proc.ExcelToDB(filefullName, result);
                                     workCount--;
                                     resultFiles += ds.Tables[0].Rows.Count;
                                     resultRows += ds.Tables[1].Rows.Count;
+                                    targetFiles++;
                                 }
                                 catch (Exception)
                                 {
@@ -108,7 +120,7 @@ namespace MyWeb.Controllers
                             ds = proc.ExcelToDB(fileName, result);
                         }
                         proc.UpdateAfter(); //DB ㄷ후처리 작업수행
-                        ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", result[0], resultFiles, result[1], resultRows);
+                        ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", result[0], targetFiles, result[1], resultRows);
                     }
 
                     if (ds != null && ds.Tables.Count == 2)

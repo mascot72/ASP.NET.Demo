@@ -19,7 +19,7 @@ namespace MyWeb.Processor
     {
         //Members declare
         string sqlDatabase = "Data Source=ISAAC-PC\\SQLEXPRESS;Initial Catalog=KSS.Local;Persist Security Info=True;User ID=sa;Password=1234";
-        int extCount = 50;  //추가컬럼갯수
+        int extCount = 100;  //추가컬럼갯수
 
         //개행문자제거
         private string Cleaning(string source, string deleteText = @"\W")   //"(?<!\r)\n"
@@ -457,10 +457,15 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                             Name = col.ColumnName
                                                         });
 
+                                                        fileInfo.Remark += (fileInfo.Remark != "" ? "|" : ", add extend column:") + col.ColumnName + "(" + addExt.ID + ")";
                                                         fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + addExt.ID + ")";
                                                         extList = GetModelExtendList(); //Reload from DB
                                                     }
-
+                                                    else
+                                                    {
+                                                        var curPropery = propertyQueryMst.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
+                                                        fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + curPropery.Name + ")";
+                                                    }
                                                 }
                                             }
                                         }//------------------------------------------------------------------------------------------------                               
@@ -495,7 +500,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                     }
                                                     else
                                                     {
-                                                        //확장정보가 기존에 존재하는지 확인
+                                                        //확장컬럼위치에 넣기
                                                         var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
                                                         if (entity != null)
                                                         {
