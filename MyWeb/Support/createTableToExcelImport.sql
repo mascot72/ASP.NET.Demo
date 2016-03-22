@@ -21,6 +21,21 @@ create table VALU_EXCEL_EXT(
 )
 GO
 
+--추가걸럼 내용
+CREATE TABLE [dbo].[VALU_EXCEL_EXT_CONTENT](
+	[ImportID] [int] NOT NULL,
+	[ExtID] [varchar](10) NOT NULL,
+	[Content] [varchar](255) NOT NULL,
+	[Ref1] [int] NULL,
+	[Ref2] [varchar](200) NULL
+ CONSTRAINT [PK_VALU_EXCEL_EXT_CONTENT] PRIMARY KEY CLUSTERED 
+(
+	[ImportID] ASC,
+	[ExtID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
 --Excel Import Data
 CREATE TABLE [dbo].[VALU_EXCEL] (
 [ID] int PRIMARY KEY IDENTITY(1, 1) NOT NULL,
@@ -183,6 +198,8 @@ CREATE TABLE [dbo].[VALU_EXCEL] (
 [Ext98] nvarchar(200) NULL,
 [Ext99] nvarchar(200) NULL,
 [Ext100] nvarchar(200) NULL,
+[Ref1] [int] NULL,
+[Ref2] [varchar](200) NULL,
 [Reason] nvarchar(2000) NULL,
 [CreateDate] datetime NOT NULL default(getdate()),
 [Creator] varchar(255) NULL)

@@ -89,10 +89,22 @@ namespace MyWeb.Controllers
                                 {
                                     //Error항목처리시
                                     string filefullName = file.FullName;
-                                    
+
+                                    if (fileTable.Where(e => e.Name == file.Name && e.Result == "E" && e.Reason.StartsWith("Ext")).Count() > 0)
+                                    {
+                                        if (workCount <= 0) break;
+                                        ds = proc.ExcelToDB(filefullName, result);
+                                        workCount--;    //처리된 만큼 처리할 행수 뺀다
+                                        resultFiles += ds.Tables[0].Rows.Count;
+                                        resultRows += ds.Tables[1].Rows.Count;
+                                        targetFiles++;
+                                    }
+                                    else
+                                        continue;
+
                                     if (processState != "")
                                     {
-                                        if (fileTable.Where(e => e.Result == processState && e.Name == file.Name).Count() == 0)  //오류났던 항목이면 처리
+                                        if (fileTable.Where(e => e.Result == processState && e.Name == file.Name).Count() == 0)  //오류났던 항목이면 처리(결과가 상태와 같고 처리된 파일명이 없으면 제외)
                                         {
                                             continue;
                                         }
@@ -104,7 +116,7 @@ namespace MyWeb.Controllers
 
                                     if (workCount <= 0) break;
                                     ds = proc.ExcelToDB(filefullName, result);
-                                    workCount--;
+                                    workCount--;    //처리된 만큼 처리할 행수 뺀다
                                     resultFiles += ds.Tables[0].Rows.Count;
                                     resultRows += ds.Tables[1].Rows.Count;
                                     targetFiles++;

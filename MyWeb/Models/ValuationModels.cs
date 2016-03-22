@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MyWeb.Models
 {
+    //추가컬럼 정의
     [Table(Name = "VALU_EXCEL_EXT")]
     public class ModelExtendColumn
     {
@@ -20,7 +21,34 @@ namespace MyWeb.Models
         [Display(Name = "CreateDate")]
         public DateTime? CreateDate { get; set; }
     }
+    //추가컬럼 내용
+    [Table(Name = "VALU_EXCEL_EXT_CONTENT")]
+    public class ModelExtendContent
+    {
+        //VALU_EXCEL(ID)
+        [Column(CanBeNull = false, DbType = "int",
+        Name = "ImportID", IsPrimaryKey = true)]
+        public int ImportID { get; set; }
 
+        //VALU_EXCEL_EXT(ID)
+        [Column(CanBeNull = false, DbType = "varchar(10)",
+        Name = "ExtID", IsPrimaryKey = true)]
+        public string ExtID { get; set; }
+
+        [Column(CanBeNull = true, DbType = "nvarchar(255)", Name = "Content", IsPrimaryKey = false)]
+        [Display(Name = "Content")]
+        public string Content { get; set; }
+
+        [Column(CanBeNull = true, DbType = "int",
+        Name = "Ref1")]
+        public int Ref1 { get; set; }
+
+        [Column(CanBeNull = true, DbType = "varchar(200)",
+        Name = "Ref2")]
+        public string Ref2 { get; set; }
+    }
+
+    //Excel File 입력정보
     [Table(Name = "FILE_IMPORT_INFO")]
     public class FileImport
     {
@@ -75,6 +103,7 @@ namespace MyWeb.Models
 
 namespace MyWeb.Models.Excel
 {
+    //Excel 내용
     [Table(Name = "VALU_EXCEL")]
     public class ValuationModels
     {
@@ -320,6 +349,7 @@ namespace MyWeb.Models.Excel
         [Column(CanBeNull = true, DbType = "float", IsPrimaryKey = false)]
         public Double Qty { get; set; }
 
+        /*
         //Extend columns
         [Display(Name = "Ext1")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
@@ -440,6 +470,176 @@ namespace MyWeb.Models.Excel
         [Display(Name = "Ext30")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext30 { get; set; }
+
+        [Display(Name = "Ext31")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext31 { get; set; }
+
+        [Display(Name = "Ext32")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext32 { get; set; }
+
+        [Display(Name = "Ext33")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext33 { get; set; }
+
+        [Display(Name = "Ext34")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext34 { get; set; }
+
+        [Display(Name = "Ext35")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext35 { get; set; }
+
+        [Display(Name = "Ext36")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext36 { get; set; }
+
+        [Display(Name = "Ext37")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext37 { get; set; }
+
+        [Display(Name = "Ext38")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext38 { get; set; }
+
+        [Display(Name = "Ext39")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext39 { get; set; }
+
+        [Display(Name = "Ext40")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext40 { get; set; }
+
+        [Display(Name = "Ext41")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext41 { get; set; }
+
+        [Display(Name = "Ext42")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext42 { get; set; }
+
+        [Display(Name = "Ext43")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext43 { get; set; }
+
+        [Display(Name = "Ext44")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext44 { get; set; }
+
+        [Display(Name = "Ext45")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext45 { get; set; }
+
+        [Display(Name = "Ext46")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext46 { get; set; }
+
+        [Display(Name = "Ext47")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext47 { get; set; }
+
+        [Display(Name = "Ext48")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext48 { get; set; }
+
+        [Display(Name = "Ext49")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext49 { get; set; }
+
+        [Display(Name = "Ext50")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext50 { get; set; }
+
+        [Display(Name = "Ext51")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext51 { get; set; }
+
+        [Display(Name = "Ext52")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext52 { get; set; }
+
+        [Display(Name = "Ext53")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext53 { get; set; }
+
+        [Display(Name = "Ext54")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext54 { get; set; }
+
+        [Display(Name = "Ext55")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext55 { get; set; }
+
+        [Display(Name = "Ext56")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext56 { get; set; }
+
+        [Display(Name = "Ext57")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext57 { get; set; }
+
+        [Display(Name = "Ext58")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext58 { get; set; }
+
+        [Display(Name = "Ext59")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext59 { get; set; }
+
+        [Display(Name = "Ext60")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext60 { get; set; }
+
+        [Display(Name = "Ext61")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext61 { get; set; }
+
+        [Display(Name = "Ext62")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext62 { get; set; }
+
+        [Display(Name = "Ext63")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext63 { get; set; }
+
+        [Display(Name = "Ext64")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext64 { get; set; }
+
+        [Display(Name = "Ext65")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext65 { get; set; }
+
+        [Display(Name = "Ext66")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext66 { get; set; }
+
+        [Display(Name = "Ext67")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext67 { get; set; }
+
+        [Display(Name = "Ext68")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext68 { get; set; }
+
+        [Display(Name = "Ext69")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext69 { get; set; }
+
+        [Display(Name = "Ext70")]
+        [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
+        public string Ext70 { get; set; }
+
+    */
+
+        [Column(CanBeNull = true, DbType = "int",
+        Name = "Ref1")]
+        public int Ref1 { get; set; }
+
+        [Column(CanBeNull = true, DbType = "varchar(200)",
+        Name = "Ref2")]
+        public string Ref2 { get; set; }
 
         [Display(Name = "Reason")]
         [Column(CanBeNull = true, DbType = "varchar(2000)", IsPrimaryKey = false)]

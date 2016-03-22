@@ -254,6 +254,28 @@ namespace MyWeb.Processor
         }
 
         //Upload후처리(DB Update)
+        public int UpdateAfterDataRow()
+        {
+            try
+            {
+                int result = 0;
+                using (var dbContext = new DataContext(sqlDatabase))
+                {
+                    result = dbContext.ExecuteCommand(@"
+UPDATE VALU_EXCEL_EXT_CONTENT
+SET ImportID = B.ID, Ref1 = NULL
+FROM VALU_EXCEL_EXT_CONTENT A JOIN VALU_EXCEL B ON A.Ref1 = B.Ref1
+WHERE A.Ref1 IS NOT NULL AND B.Ref1 IS NOT NULL
+AND A.ImportID >= 10000000");
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public int UpdateAfter()
         {
             try
@@ -361,6 +383,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                 {
                     var sqlTable = dbContext.GetTable(tmpClass);
                     var fileTable = dbContext.GetTable(typeof(MyWeb.Models.FileImport));
+                    var extContentTable = dbContext.GetTable(typeof(MyWeb.Models.ModelExtendContent));
 
                     FileInfo files = new System.IO.FileInfo(fileName);
 
@@ -422,19 +445,19 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                             currDataTable.Columns.Add("Reason");
                                         }
                                         
-                                        for (int i = 0; i < extCount; i++)
-                                        {
-                                            string extId = "Ext" + (i + 1);
-                                            int idxColumn = currDataTable.Columns.IndexOf(extId);
-                                            if (idxColumn > -1 && currDataTable.Columns[idxColumn].ColumnName == extId)  //컬럼이 존재시(중복일 경우)
-                                            {
-                                                continue;
-                                            }
-                                            else
-                                            {
-                                                currDataTable.Columns.Add(extId);
-                                            }
-                                        }
+                                        //for (int i = 0; i < extCount; i++)
+                                        //{
+                                        //    string extId = "Ext" + (i + 1);
+                                        //    int idxColumn = currDataTable.Columns.IndexOf(extId);
+                                        //    if (idxColumn > -1 && currDataTable.Columns[idxColumn].ColumnName == extId)  //컬럼이 존재시(중복일 경우)
+                                        //    {
+                                        //        continue;
+                                        //    }
+                                        //    else
+                                        //    {
+                                        //        currDataTable.Columns.Add(extId);
+                                        //    }
+                                        //}
 
                                         //2. 컬럼 예외처리------------------------------------------------------------------------------ 
                                         foreach (DataColumn col in currDataTable.Columns)
@@ -448,7 +471,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                     var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
                                                     if (entity == null && !col.ColumnName.StartsWith("Ext"))
                                                     {
-                                                        if (extList.Count() >= extCount) throw new ApplicationException("Ext컬럼이 " + extCount + "개가 넘어서 현재파일은 Rollback합니다");
+                                                        //if (extList.Count() >= extCount) throw new ApplicationException("Ext컬럼이 " + extCount + "개가 넘어서 현재파일은 Rollback합니다");
 
                                                         //확장정보추가
                                                         var addExt = AddModelExtend(new ModelExtendColumn()
@@ -464,7 +487,8 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                     else
                                                     {
                                                         var curPropery = propertyQueryMst.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
-                                                        fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + curPropery.Name + ")";
+                                                        if (curPropery != null)
+                                                            fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + curPropery.Name + ")";
                                                     }
                                                 }
                                             }
@@ -501,10 +525,24 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                     else
                                                     {
                                                         //확장컬럼위치에 넣기
-                                                        var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
-                                                        if (entity != null)
+                                                        var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();    //확장정의명과 컬럼명이 일치한것 가져오기
+                                                        if (entity != null && row[col.ColumnName] != null && row[col.ColumnName].ToString().Trim() != "")  //내용이 있을때만
                                                         {
-                                                            row[entity.ID] = row[col.ColumnName];
+                                                            //row[entity.ID] = row[col.ColumnName];   //Import Master에 확장컬럼내용 적용
+
+                                                            //import ModelExtendContent
+                                                            
+                                                            var extData = new ModelExtendContent()
+                                                            {                                                                
+                                                                ImportID = 10000000+idx,
+                                                                ExtID = entity.ID,
+                                                                Content = row[col.ColumnName].ToString().Trim(),
+                                                                Ref1 = idx
+                                                            };                                                            
+                                                            
+                                                            extContentTable.InsertOnSubmit(extData);
+
+                                                            row["Reason"] += (row["Reason"] != null && row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName + "(" + entity.ID + ")";
                                                         }
 
                                                     }
@@ -626,6 +664,10 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                     {
                                                         property.SetValue(instance, fileInfo.ID);
                                                     }
+                                                    else if("Ref1" == property.Name)    //확장컬럼 Update용
+                                                    {
+                                                        property.SetValue(instance, idx);
+                                                    }
                                                     /*
                                                     else {
                                                         //Ext add
@@ -657,7 +699,6 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
 
                                             } // property loop
 
-
                                             //if (inst.Name != null)
                                             sqlTable.InsertOnSubmit(instance);
                                             idx++;  //processed row Index
@@ -668,12 +709,17 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                         fileInfo.Result = "S";
                                         fileInfo.Reason = (idx).ToString();
                                         dbContext.SubmitChanges();
+
                                         successFileCount++;
+
+                                        //extContentTable
 
                                     } // using DataTable
 
                                     success[0] = successFileCount;
                                     success[1] = idx;
+
+                                    UpdateAfterDataRow();   //확정컬럼 존재시 부모값 Update
 
                                     return myDataSet;
                                 } // using DataSet
