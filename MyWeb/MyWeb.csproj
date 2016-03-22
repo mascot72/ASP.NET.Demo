@@ -236,7 +236,6 @@
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
-    <Compile Include="Controllers\ModelExtendColumnsController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -312,11 +311,6 @@
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Home\Upload.cshtml" />
     <Content Include="Support\VAL_EXCEL_TMP.xlsx" />
-    <Content Include="Views\ValuationModels\Create.cshtml" />
-    <Content Include="Views\ValuationModels\Delete.cshtml" />
-    <Content Include="Views\ValuationModels\Details.cshtml" />
-    <Content Include="Views\ValuationModels\Edit.cshtml" />
-    <Content Include="Views\ValuationModels\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
