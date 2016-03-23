@@ -10,7 +10,7 @@
 
 <h2>Upload Files</h2>
 <div>
-    @using (Html.BeginForm("Upload", "Valuation", null, FormMethod.Post, new { enctype = "multipart/form-data" }))
+    @using (Html.BeginForm("Upload", "Valuations", null, FormMethod.Post, new { enctype = "multipart/form-data" }))
     {
         @Html.AntiForgeryToken()
         @Html.ValidationSummary()

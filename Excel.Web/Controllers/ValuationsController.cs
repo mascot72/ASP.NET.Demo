@@ -122,6 +122,11 @@ namespace Excel.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        public ActionResult Upload()
+        {
+            return View();
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Upload(HttpPostedFileBase upload, string isReadonly, int workCount = 10, string processState = "", string folderPath = "")
@@ -153,7 +158,7 @@ namespace Excel.Web.Controllers
 
                 if (ModelState.IsValid)
                 {
-                    ExcelConverter proc = new ExcelConverter();
+                    Excel.Web.Processor.ExcelConverter proc = new Excel.Web.Processor.ExcelConverter();
                     DataSet ds = null;
                     if (isReadonly != null && isReadonly == "true")
                     {
@@ -217,7 +222,7 @@ namespace Excel.Web.Controllers
                         {
                             ds = proc.ExcelToDB(fileName, result);
                         }
-                        proc.UpdateAfter(); //DB ㄷ후처리 작업수행
+                        //proc.UpdateAfter(); //DB 후처리 작업수행
                         ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", result[0], targetFiles, result[1], resultRows);
                     }
 
