@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace Excel.Domain.Concrete
 {
-    public class ValuationRepository : LogBase, IValuationRepository
+    public class ValuationRepository : LogBase, IDisposable, IValuationRepository
     {
         private EFDbContext context;
 

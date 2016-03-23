@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace Excel.Domain.Concrete
 {
-    public class FileImportRepository : LogBase, IFileImportRepository
+    public class FileImportRepository : LogBase, IDisposable, IFileImportRepository
     {
         private EFDbContext context;
 
