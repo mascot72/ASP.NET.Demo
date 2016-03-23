@@ -17,5 +17,6 @@ namespace Excel.Domain.Concrete
         public System.Data.Entity.DbSet<Excel.Domain.Entites.ExtendDefine> ExtendDefines { get; set; }
 
         public System.Data.Entity.DbSet<Excel.Domain.Entites.ExtendContent> ExtendContents { get; set; }
+
     }
 }
