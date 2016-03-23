@@ -33,6 +33,27 @@ namespace Excel.Domain.Concrete
         }
 
         //Create
+        public bool AddModel(ExtendContent model)
+        {
+            bool result = default(bool);
+
+            try
+            {
+                if (this.context.ExtendContents.Count(x => x.ImportID != model.ImportID && x.EID == model.EID) == 0)   //명칭이 존재하지 않을 때만 추가
+                {
+                    this.context.ExtendContents.Add(model);
+                    this.context.SaveChanges();
+                    result = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                this.log.Error(MethodBase.GetCurrentMethod().Name, ex);
+                throw ex;
+            }
+
+            return result;
+        }
 
         //Remove
 

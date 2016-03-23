@@ -20,6 +20,8 @@ namespace Excel.Domain.Entites
         [ForeignKey("ExtendDefine")]
         [Column(Order = 2)]
         public int EID { get; set; }
+
+        public string Name { get; set; }
         
         public string Content { get; set; }
         
