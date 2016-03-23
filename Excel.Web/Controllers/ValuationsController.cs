@@ -9,7 +9,7 @@ using System.Web.Mvc;
 using Excel.Domain.Concrete;
 using Excel.Domain.Entites;
 
-namespace Excel.Web
+namespace Excel.Web.Controllers
 {
     public class ValuationsController : Controller
     {

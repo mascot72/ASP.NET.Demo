@@ -9,14 +9,14 @@ using System.Reflection;
 
 namespace Excel.Domain.Concrete
 {
-    public class ValuationRepository : LogBase, IValuationRepository
+    public class FileImportRepository : LogBase, IFileImportRepository
     {
         private EFDbContext context;
 
         /// <summary>
         /// Constractor
         /// </summary>
-        public ValuationRepository() : base()
+        public FileImportRepository() : base()
         {
             this.context = new EFDbContext();
         }
@@ -24,15 +24,11 @@ namespace Excel.Domain.Concrete
         //GetSingle
 
         //GetList
-
-        /// <summary>
-        /// GetList
-        /// </summary>
-        public IEnumerable<Valuation> Valuations
+        public IEnumerable<FileImport> FileImports
         {
             get
             {
-                return context.Valuations;
+                return context.FileImports;
             }
         }
 
@@ -51,15 +47,13 @@ namespace Excel.Domain.Concrete
 
             try
             {
-                //추가정보 삭제
-                ExtendContentRepository rep = new ExtendContentRepository();
+                var extCont = this.context.ExtendContents.Find(Id);
 
-                var single = this.context.Valuations.Find(Id);
-                if (single != null)
+                if (extCont != null)
                 {
-                    rep.RemoveModelByParent(Id);    //자식삭제
-                    this.context.Valuations.Remove(single); //자신삭제
-                    result = this.context.SaveChanges() > 0;
+                    this.context.ExtendContents.Attach(extCont);
+                    var entry = this.context.Entry(extCont);
+                    return this.context.SaveChanges() > 0;
                 }
             }
             catch (Exception ex)

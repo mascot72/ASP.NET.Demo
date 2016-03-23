@@ -209,17 +209,16 @@
     <Compile Include="Controllers\FileImportsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
-    <Compile Include="ExtendContentsController.cs" />
-    <Compile Include="ExtendDefinesController.cs" />
+    <Compile Include="Controllers\ValuationsController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
-    <Compile Include="ValuationsController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.css" />
@@ -281,11 +280,6 @@
     <Content Include="Views\Manage\VerifyPhoneNumber.cshtml" />
     <Content Include="Views\Shared\Lockout.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
-    <Content Include="Views\FileImports\Create.cshtml" />
-    <Content Include="Views\FileImports\Delete.cshtml" />
-    <Content Include="Views\FileImports\Details.cshtml" />
-    <Content Include="Views\FileImports\Edit.cshtml" />
-    <Content Include="Views\FileImports\Index.cshtml" />
     <Content Include="Views\Valuations\Create.cshtml" />
     <Content Include="Views\Valuations\Delete.cshtml" />
     <Content Include="Views\Valuations\Details.cshtml" />

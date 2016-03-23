@@ -38,6 +38,10 @@
       <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
@@ -54,7 +58,12 @@
     <Compile Include="Abstract\IFileImportRepository.cs" />
     <Compile Include="Abstract\IValuationRepository.cs" />
     <Compile Include="Concrete\EFDbContext.cs" />
+    <Compile Include="Concrete\ExtendContentRepository.cs" />
+    <Compile Include="Concrete\ExtendDefineRepository.cs" />
+    <Compile Include="Concrete\FileImportRepository.cs" />
     <Compile Include="Concrete\ValuationRepository.cs" />
+    <Compile Include="LogBase.cs" />
+    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Entites\ExtendContent.cs" />
     <Compile Include="Entites\ExtendDefine.cs" />

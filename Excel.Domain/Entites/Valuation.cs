@@ -21,11 +21,11 @@ namespace Excel.Domain.Entites
 
         public string InvenNo { get; set; }
 
-        public Double SGNo { get; set; }
+        public Double? SGNo { get; set; }
 
         public string TID { get; set; }
 
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
 
         public string Name { get; set; }
 
@@ -33,7 +33,7 @@ namespace Excel.Domain.Entites
 
         public string Type { get; set; }
 
-        public Double DealNo { get; set; }
+        public Double? DealNo { get; set; }
 
         public string LeadNo { get; set; }
 
@@ -71,11 +71,11 @@ namespace Excel.Domain.Entites
 
         public string Remark { get; set; }
 
-        public Double Period { get; set; }
+        public Double? Period { get; set; }
 
-        public DateTime BuyDate { get; set; }
+        public DateTime? BuyDate { get; set; }
 
-        public DateTime SellDate { get; set; }
+        public DateTime? SellDate { get; set; }
 
         public string Buyer { get; set; }
 
