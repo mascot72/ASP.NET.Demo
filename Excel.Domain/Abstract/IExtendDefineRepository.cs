@@ -9,6 +9,6 @@ namespace Excel.Domain.Abstract
 {
     interface IExtendDefineRepository
     {
-        IEnumerable<ExtendDefine> extendDefine { get; }
+        IEnumerable<ExtendDefine> ExtendDefines { get; }
     }
 }

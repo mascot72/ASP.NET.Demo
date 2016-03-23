@@ -9,6 +9,6 @@ namespace Excel.Domain.Abstract
 {
     interface IFileImportRepository
     {
-        IEnumerable<FileImport> fileImport { get; }
+        IEnumerable<FileImport> FileImports { get; }
     }
 }

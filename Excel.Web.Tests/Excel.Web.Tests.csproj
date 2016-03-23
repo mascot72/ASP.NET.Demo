@@ -92,6 +92,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Excel.Domain\Excel.Domain.csproj">
+      <Project>{197c5010-8a98-4d6e-bcee-79392d8fe023}</Project>
+      <Name>Excel.Domain</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Excel.Web\Excel.Web.csproj">
       <Project>{8851B7E6-9C21-4B12-B21D-42002CA36CDF}</Project>
       <Name>Excel.Web</Name>

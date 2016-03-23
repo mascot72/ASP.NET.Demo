@@ -53,6 +53,8 @@
     <Compile Include="Abstract\IExtendDefineRepository.cs" />
     <Compile Include="Abstract\IFileImportRepository.cs" />
     <Compile Include="Abstract\IValuationRepository.cs" />
+    <Compile Include="Concrete\EFDbContext.cs" />
+    <Compile Include="Concrete\ValuationRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Entites\ExtendContent.cs" />
     <Compile Include="Entites\ExtendDefine.cs" />

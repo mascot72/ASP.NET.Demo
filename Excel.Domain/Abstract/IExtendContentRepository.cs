@@ -9,6 +9,6 @@ namespace Excel.Domain.Abstract
 {
     interface IExtendContentRepository
     {
-        IEnumerable<ExtendContent> extendContent { get; }
+        IEnumerable<ExtendContent> ExtendContents { get; }
     }
 }

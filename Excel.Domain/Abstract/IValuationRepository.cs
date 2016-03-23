@@ -9,6 +9,6 @@ namespace Excel.Domain.Abstract
 {
     interface IValuationRepository
     {
-        IEnumerable<Valuation> valuations { get; }
+        IEnumerable<Valuation> Valuations { get; }
     }
 }

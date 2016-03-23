@@ -1,0 +1,706 @@
+﻿@model IEnumerable<Excel.Domain.Entites.Valuation>
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Index</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.FileImport.Path)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.EID)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.InvenNo)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SGNo)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.TID)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Date)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Version)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Type)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.DealNo)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.LeadNo)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Comment)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Comment_1)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Currency)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Category)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Maker)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Model)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Process)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Vintage)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.WaferSize)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SerialNo)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Config)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Fab)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Code)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Location)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Inspector)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.InspectionSummary)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Remark)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Period)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.BuyDate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SellDate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Buyer)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Seller)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.ToolPriceB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.TotalCostB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SGCostB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.TotalCostS)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.TotalBuy)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SGTotalBuy)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SellPriceE)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.TargetPrice)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Profit)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.ProfitPercent)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.ROI)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.AnnualROI)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.DeinstallCostB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.RiggingCostB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.ShippingCostB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.PackingCostB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.InlandTruckingCostB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.CommissionB)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.WarehouseCost)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SGWarehouseCost)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SGInterest)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.InventoryAllowance)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SGCommission)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Task)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SGOfferUSD)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Qty)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext1)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext2)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext3)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext4)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext5)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext6)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext7)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext8)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext9)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext10)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext11)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext12)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext13)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext14)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext15)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext16)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext17)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext18)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext19)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext20)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext21)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext22)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext23)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext24)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext25)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext26)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext27)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext28)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext29)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext30)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext31)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext32)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext33)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext34)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext35)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext36)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext37)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext38)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext39)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext40)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext41)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext42)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext43)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext44)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext45)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext46)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext47)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext48)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext49)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ext50)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ref1)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Ref2)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Reason)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Creator)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.FileImport.Path)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.EID)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.InvenNo)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SGNo)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.TID)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Date)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Name)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Version)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Type)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.DealNo)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.LeadNo)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Comment)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Comment_1)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Currency)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Category)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Maker)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Model)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Process)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Vintage)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.WaferSize)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SerialNo)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Config)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Fab)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Code)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Location)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Inspector)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.InspectionSummary)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Remark)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Period)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.BuyDate)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SellDate)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Buyer)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Seller)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.ToolPriceB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.TotalCostB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SGCostB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.TotalCostS)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.TotalBuy)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SGTotalBuy)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SellPriceE)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.TargetPrice)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Profit)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.ProfitPercent)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.ROI)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.AnnualROI)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.DeinstallCostB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.RiggingCostB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.ShippingCostB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.PackingCostB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.InlandTruckingCostB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.CommissionB)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.WarehouseCost)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SGWarehouseCost)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SGInterest)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.InventoryAllowance)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SGCommission)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Task)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.SGOfferUSD)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Qty)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext1)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext2)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext3)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext4)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext5)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext6)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext7)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext8)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext9)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext10)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext11)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext12)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext13)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext14)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext15)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext16)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext17)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext18)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext19)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext20)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext21)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext22)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext23)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext24)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext25)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext26)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext27)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext28)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext29)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext30)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext31)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext32)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext33)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext34)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext35)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext36)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext37)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext38)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext39)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext40)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext41)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext42)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext43)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext44)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext45)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext46)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext47)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext48)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext49)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ext50)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ref1)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Ref2)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Reason)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Creator)
+        </td>
+        <td>
+            @Html.ActionLink("Edit", "Edit", new { id=item.ID }) |
+            @Html.ActionLink("Details", "Details", new { id=item.ID }) |
+            @Html.ActionLink("Delete", "Delete", new { id=item.ID })
+        </td>
+    </tr>
+}
+
+</table>
