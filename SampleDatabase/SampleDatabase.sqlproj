@@ -60,6 +60,8 @@
   </ItemGroup>
   <ItemGroup>
     <Build Include="VALU_EXCEL.sql" />
-    <Build Include="EXCEL_IMPORT.sql" />
+    <Build Include="VALU_EXCEL_EXT.sql" />
+    <Build Include="VALU_EXCEL_EXT_CONTENT.sql" />
+    <Build Include="FILE_IMPORT_INFO.sql" />
   </ItemGroup>
 </Project>
