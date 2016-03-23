@@ -93,7 +93,9 @@ namespace Excel.Web.Processor
                 }
 
                 //property declare                
-                var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
+                var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.FullName, classNamespace, StringComparison.Ordinal)).ToList();
+                classList = new List<Type>() { typeof(Excel.Domain.Entites.Valuation) };
+
                 var classQuery = (from tmpClass in classList
                                   where !tmpClass.Name.StartsWith("I")
                                   select tmpClass);
@@ -214,17 +216,16 @@ namespace Excel.Web.Processor
             return ds;
         }
 
-        /*
+        
         //파일입력정보
         public IEnumerable<FileImport> GetFileTable()
         {
             try
             {
                 IEnumerable<Excel.Domain.Entites.FileImport> fileTable = null;
-                using (var dbContext = new DataContext(sqlDatabase))
+                using (var context = new EFDbContext())
                 {
-                    fileTable = dbContext.GetTable<Excel.Domain.Entites.FileImport>().ToList();
-                    //.ExecuteQuery<Excel.Domain.Entites.FileImport>("SELECT ID, Path, Name, Extname, Result, Reason, Remark, Extend, CreateDate, Creator, Size FROM FILE_IMPORT_INFO");
+                    fileTable = context.FileImports.ToList();
 
                 }
                 return fileTable;
@@ -234,7 +235,7 @@ namespace Excel.Web.Processor
                 throw ex;
             }
         }
-
+        /*
         //확장정보 목록조회
         public IEnumerable<ExtendDefine> GetModelExtendList()
         {
@@ -342,10 +343,39 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
             }
 
             //Namespace에 속한 Model조회
-            var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();
+            var classList = Assembly.GetExecutingAssembly().GetTypes().Where(t => String.Equals(t.Namespace, classNamespace, StringComparison.Ordinal)).ToList();            
+            classList = new List<Type>() { typeof(Excel.Domain.Entites.Valuation) };
+
             var filesToProcess = fileName;
             int idx = 0;
             int successFileCount = 0;
+            FileImport fileInfo = null;
+
+            //0. Validation
+            FileInfo files = new System.IO.FileInfo(fileName);  //파일 존재시에만 처리한다.
+            if (!files.Exists)
+            {
+                return null;
+            }
+            using (EFDbContext context = new EFDbContext())
+            {
+                //1. 파일정보등록
+                fileInfo = new FileImport()
+                {
+                    Name = files.Name,
+                    Creator = "",
+                    CreateDate = DateTime.Now,
+                    Extend = "",
+                    Path = files.DirectoryName,
+                    Reason = "",
+                    Result = "P",
+                    Remark = "file Last write time at(" + files.LastWriteTime.ToString() + ")",
+                    ExtName = Cleaning(files.Extension),
+                    Size = files.Length
+                };
+                context.FileImports.Add(fileInfo);
+                context.SaveChanges();
+            }
 
 
             using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
@@ -358,31 +388,6 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
 
                     foreach (var tmpClass in classQuery)
                     {
-                        var sqlTable = context.Entry(tmpClass);
-
-                        //0. Validation
-                        FileInfo files = new System.IO.FileInfo(fileName);  //파일 존재시에만 처리한다.
-                        if (!files.Exists)
-                        {
-                            break;
-                        }
-
-                        //1. 파일정보등록
-                        FileImport fileInfo = new FileImport()
-                        {
-                            Name = files.Name,
-                            Creator = "",
-                            CreateDate = DateTime.Now,
-                            Extend = "",
-                            Path = files.DirectoryName,
-                            Reason = "",
-                            Result = "P",
-                            Remark = "file Last write time at(" + files.LastWriteTime.ToString() + ")",
-                            ExtName = Cleaning(files.Extension),
-                            Size = files.Length
-                        };
-                        context.FileImports.Add(fileInfo);
-
 
                         //2. 데이타등록
                         //2-1. 확장컬럼 정의 조회
@@ -392,17 +397,18 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                         {
                             if (1 == 1)   //if (!countQuery.Any())
                             {
-                                var attributes = tmpClass.GetCustomAttributes(typeof(System.Data.Linq.Mapping.TableAttribute), true);    //Class의 속성을 가져온다
+                               // var attributes = tmpClass.GetCustomAttributes(typeof(System.Data.Linq.Mapping.TableAttribute), true);    //Class의 속성을 가져온다
 
-                                if (attributes.Any())
+                                if (1==1)   //if (attributes.Any())
                                 {
+                                    /*
                                     var instanceMst = Activator.CreateInstance(tmpClass);
                                     var propertiesMst = tmpClass.GetProperties();
                                     var propertyQueryMst = (from property in propertiesMst
                                                             where property.CanWrite
                                                             select property);
-
-                                    var tableName = ((System.Data.Linq.Mapping.TableAttribute)attributes[0]).Name;
+                                                            */
+                                    //var tableName = ((System.Data.Linq.Mapping.TableAttribute)attributes[0]).Name;
 
                                     using (var myDataSet = ExcelToDataSet(fileName))
                                     {
@@ -423,254 +429,235 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
 
                                             //2. 컬럼 예외처리------------------------------------------------------------------------------ 
                                             //DataTable.Columns만큼 Loop돌면서 확장컬럼 등록된 것이 없으면 등록
-                                            foreach (DataColumn col in currDataTable.Columns)
+                                            using (ExtendDefineRepository extDefContext = new ExtendDefineRepository())    //using ExtDefine context
+                                            using (ExtendContentRepository extContContext = new ExtendContentRepository())
                                             {
-
-                                                if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper())) continue;   //예외
-
-                                                //엑셀컬럼중 Model Property에 존재하지 않으면
-                                                if (tmpClass.GetProperties().Count(e => e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
+                                                foreach (DataColumn col in currDataTable.Columns)
                                                 {
-                                                    using (ExtendDefineRepository extDef = new ExtendDefineRepository())
+                                                    if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper())) continue;   //예외
+
+                                                    //엑셀컬럼중 Model Property에 존재하지 않으면
+
+                                                    if (tmpClass.GetProperties().Count(e => e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
                                                     {
-                                                        bool exists = extDef.AddModel(new ExtendDefine()
+
+                                                        var newExt = new ExtendDefine()
                                                         {
                                                             Name = col.ColumnName.Trim()
-                                                        });
+                                                        };
+                                                        bool exists = extDefContext.AddModel(newExt);
                                                         //새로 추가인 경우 file정보에도 기록
                                                         if (exists)
                                                         {
-                                                            fileInfo.Remark += (fileInfo.Remark != "" ? "|" : ", add extend column:") + col.ColumnName + "(" + addExt.ID + ")";
-                                                            fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + addExt.ID + ")";
+                                                            fileInfo.Remark += (fileInfo.Remark != "" ? "|" : ", add extend column:") + col.ColumnName + "(" + newExt.ID + ")";
+                                                            fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + newExt.ID + ")";
                                                             //extList = GetModelExtendList(); //Reload from DB
                                                         }
+
                                                     }
-                                                }
-                                                else
-                                                {
-                                                    var curPropery = propertyQueryMst.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();
-                                                    if (curPropery != null)
-                                                        fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + curPropery.Name + ")";
-                                                }                                                
-                                            }//------------------------------------------------------------------------------------------------                               
-                                             //==================================================================>
-
-                                            foreach (DataRow row in currDataTable.Rows)
-                                            {
-                                                //each row reset Ext? Columns
-                                                if (row["Name"] == null || row["Name"].ToString().Trim() == "")
-                                                {
-                                                    //throw new ApplicationException("Name컬럼이 존재하지 않습니다");
-                                                    continue;   //병합된 컬럼이 존재시 이Row만 제외하고 통과해야 한다
-                                                }
-
-                                                //속성
-                                                var instance = Activator.CreateInstance(tmpClass);
-                                                var properties = tmpClass.GetProperties();
-                                                var propertyQuery = (from property in properties
-                                                                     where property.CanWrite
-                                                                     select property);
-
-                                                //Table mapping(Extended)...<!------------------------------                                            
-                                                //dataColumn만큼 loop, if property not matched column then Ext++
-                                                foreach (DataColumn col in currDataTable.Columns)
-                                                {
-                                                    //엑셀컬럼중 Model Property에 존재하지 않으면
-                                                    if (propertyQuery.Count(e => e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
-                                                    {
-                                                        if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper()))
-                                                        {
-                                                            row["ProfitPercent"] = row[col.ColumnName];
-                                                        }
-                                                        else
-                                                        {
-                                                            //확장컬럼위치에 넣기
-                                                            var entity = extList.Where(e => e.Name.ToUpper() == col.ColumnName.ToUpper()).SingleOrDefault();    //확장정의명과 컬럼명이 일치한것 가져오기
-                                                            if (entity != null && row[col.ColumnName] != null && row[col.ColumnName].ToString().Trim() != "")  //내용이 있을때만
-                                                            {
-                                                                //row[entity.ID] = row[col.ColumnName];   //Import Master에 확장컬럼내용 적용
-
-                                                                //import ModelExtendContent
-
-                                                                var extData = new ModelExtendContent()
-                                                                {
-                                                                    ImportID = 10000000 + idx,
-                                                                    ExtID = entity.ID,
-                                                                    Content = row[col.ColumnName].ToString().Trim(),
-                                                                    Ref1 = idx
-                                                                };
-
-                                                                extContentTable.InsertOnSubmit(extData);
-
-                                                                row["Reason"] += (row["Reason"] != null && row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName + "(" + entity.ID + ")";
-                                                            }
-
-                                                        }
-                                                    }
-                                                }
-                                                //---------------------------------------------------------->
-
-                                                foreach (PropertyInfo property in propertyQuery)
-                                                {
-                                                    // Grab the Linq to Sql data attributes.
-                                                    var dbProperty = property.GetCustomAttribute
-                                                        (typeof(ColumnAttribute), false) as ColumnAttribute;
-
-                                                    if (dbProperty == null) continue;
-
-                                                    int idxColumn = currDataTable.Columns.IndexOf(property.Name);
-                                                    if (idxColumn > -1 && currDataTable.Columns[idxColumn].ColumnName == property.Name)  //컬럼이 존재시
-                                                    {
-                                                        var val = row[property.Name];
-                                                        if (val == DBNull.Value)
-                                                        {
-                                                            val = null;
-                                                        }
-
-                                                        if (val == null)
-                                                        {
-                                                            if ((property.PropertyType == typeof(DateTime)) ||
-                                                                (property.PropertyType == typeof(DateTime?)))
-                                                            {
-                                                                //DateTime? nullableDate = null;
-
-                                                                //min DateTime
-                                                                DateTime nullableDate = new DateTime(1900, 1, 1);
-
-                                                                property.SetValue(instance, nullableDate);
-                                                            }
-                                                            else if (!dbProperty.CanBeNull)
-                                                            {
-                                                                if (property.PropertyType == typeof(string))
-                                                                {
-                                                                    property.SetValue(instance, string.Empty);
-                                                                }
-                                                                else {
-                                                                    var tmpVal = Activator.CreateInstance(property.PropertyType).GetType();
-                                                                    property.SetValue(instance, Activator.CreateInstance(tmpVal));
-                                                                }
-                                                            }
-                                                            else {
-                                                                property.SetValue(instance, null);
-                                                            }
-                                                        }
-                                                        else if ((dbProperty.DbType.StartsWith("nvarchar") &&
-                                                                 (!string.IsNullOrEmpty(val.ToString()))))
-                                                        {
-
-                                                            var sLength = dbProperty.DbType.Substring(("nvarchar(").Length);
-                                                            sLength = sLength.Substring(0, sLength.Length - 1);
-                                                            var iLength = Int32.Parse(sLength);
-                                                            var newVal = val.ToString();
-                                                            newVal = newVal.Substring(0, Math.Min(iLength, newVal.Length));
-
-                                                            if ((property.PropertyType == typeof(char)) &&
-                                                                (newVal.Length == 1))
-                                                            {
-                                                                property.SetValue(instance, newVal[0]);
-                                                            }
-                                                            else {
-                                                                // Set the truncated string
-                                                                property.SetValue(instance, newVal);
-                                                            }
-                                                        }
-                                                        else if (val.GetType() != property.PropertyType)
-                                                        {
-
-                                                            if ((val.GetType() == typeof(DateTime)) ||
-                                                                (val.GetType() == typeof(DateTime?)))
-                                                            {
-                                                                //nullable DateTime
-                                                                //DateTime? nullableDate = (DateTime)val;                                                            
-
-                                                                //min DateTime
-                                                                DateTime nullableDate = new DateTime(1900, 1, 1);
-
-                                                                property.SetValue(instance, nullableDate);
-                                                            }
-                                                            else if ((property.PropertyType == typeof(DateTime)) ||
-                                                                     (property.PropertyType == typeof(DateTime?)))
-                                                            {
-
-                                                                var newVal = val.ToString();
-                                                                var nullableDate = (string.IsNullOrWhiteSpace
-                                                                   (newVal) ? (DateTime?)null : DateTime.Parse(newVal));
-                                                                property.SetValue(instance, nullableDate);
-                                                            }
-                                                            else {
-                                                                var pType = property.PropertyType;
-
-                                                                if ((property.PropertyType.IsGenericType) &&
-                                                                    (property.PropertyType.GetGenericTypeDefinition().
-                                                                       Equals(typeof(Nullable<>))))
-                                                                {
-                                                                    pType = Nullable.GetUnderlyingType(property.PropertyType);
-                                                                }
-
-                                                                var newProp = Convert.ChangeType(val, pType);
-                                                                property.SetValue(instance, newProp);
-                                                            }
-                                                        }
-                                                        else {
-                                                            property.SetValue(instance, val);
-                                                        }
-
-                                                    } // dbColumn exists
                                                     else
                                                     {
-                                                        //if ("ID|Creator".Contains(property.Name)) continue;
-
-                                                        if ("FileID" == (property.Name))   //파일ID Setting
-                                                        {
-                                                            property.SetValue(instance, fileInfo.ID);
-                                                        }
-                                                        else if ("Ref1" == property.Name)    //확장컬럼 Update용
-                                                        {
-                                                            property.SetValue(instance, idx);
-                                                        }
-                                                        /*
-                                                        else {
-                                                            //Ext add
-                                                            try
-                                                            {
-                                                                //if (property.Name.ToUpper() == "WAREHOUSECOST")
-                                                                //{
-                                                                //    break;
-                                                                //}
-                                                                var val = row[property.Name];
-                                                                if (val == DBNull.Value)
-                                                                {
-                                                                    val = null;
-                                                                }
-                                                                //if (property.Name == "Ext" + extIndex++)
-                                                                //{
-                                                                //    property.SetValue(instance, val != null ? val.ToString().Trim() : "");
-                                                                //}
-                                                                property.SetValue(instance, val != null ? val.ToString().Trim() : "");
-
-                                                            }
-                                                            catch (Exception ex)
-                                                            {
-                                                                throw ex;
-                                                            }                                                        
-                                                        }
-                                                        */
+                                                        var curExt = extDefContext.FindName(col.ColumnName.Trim());
+                                                        if (curExt != null)
+                                                            fileInfo.Extend += (fileInfo.Extend != "" ? "|" : "") + col.ColumnName + "(" + curExt.ID + ")";
                                                     }
 
-                                                } // property loop
+                                                }//------------------------------------------------------------------------------------------------                               
+                                                 //==================================================================>
 
-                                                //if (inst.Name != null)
-                                                sqlTable.InsertOnSubmit(instance);
-                                                idx++;  //processed row Index
+                                                foreach (DataRow row in currDataTable.Rows)
+                                                {
+                                                    //each row reset Ext? Columns
+                                                    if (row["Name"] == null || row["Name"].ToString().Trim() == "")
+                                                    {
+                                                        //throw new ApplicationException("Name컬럼이 존재하지 않습니다");
+                                                        continue;   //병합된 컬럼이 존재시 이Row만 제외하고 통과해야 한다
+                                                    }
 
-                                            } // DataRow loop
+                                                    //속성
+                                                    var instance = Activator.CreateInstance(tmpClass);
+                                                    var properties = tmpClass.GetProperties();
+                                                    var propertyQuery = (from property in properties
+                                                                         where property.CanWrite
+                                                                         select property);
+
+                                                    var valuationRow = instance as Valuation;
+
+                                                    //Table mapping(Extended)...<!------------------------------                                            
+                                                    //dataColumn만큼 loop, if property not matched column then Ext++
+                                                    foreach (DataColumn col in currDataTable.Columns)
+                                                    {
+                                                        //엑셀컬럼중 Model Property에 존재하지 않으면
+                                                        if (propertyQuery.Count(e => e.Name.ToUpper() == col.ColumnName.ToUpper()) < 1)
+                                                        {
+                                                            if ("Profit%".ToUpper().Contains(col.ColumnName.ToUpper()))
+                                                            {
+                                                                row["ProfitPercent"] = row[col.ColumnName];
+                                                            }
+                                                            else
+                                                            {
+                                                                //확장컬럼위치에 넣기
+                                                                var curExt = extDefContext.FindName(col.ColumnName.Trim());   //확장정의명과 컬럼명이 일치한것 가져오기
+                                                                if (curExt != null && row[col.ColumnName] != null && row[col.ColumnName].ToString().Trim() != "")  //내용이 있을때만
+                                                                {
+
+                                                                    //import ModelExtendContent
+                                                                    var extData = new ExtendContent()
+                                                                    {
+                                                                        ImportID = valuationRow.ID,
+                                                                        EID = curExt.ID,
+                                                                        Name = curExt.Name,
+                                                                        Content = row[col.ColumnName].ToString().Trim(),
+                                                                        Ref1 = idx
+                                                                    };
+                                                                    extContContext.AddModel(extData);
+
+                                                                    row["Reason"] += (row["Reason"] != null && row["Reason"].ToString() != "" ? "|" : "") + col.ColumnName + "(" + curExt.ID + ")";
+                                                                }
+
+                                                            }
+                                                        }
+                                                    }
+                                                    //---------------------------------------------------------->
+
+                                                    foreach (PropertyInfo property in propertyQuery)
+                                                    {
+                                                        // Grab the Linq to Sql data attributes.
+                                                        var dbProperty = property.GetCustomAttribute
+                                                            (typeof(ColumnAttribute), false) as ColumnAttribute;
+
+                                                        if (dbProperty == null) continue;
+
+                                                        int idxColumn = currDataTable.Columns.IndexOf(property.Name);
+                                                        if (idxColumn > -1 && currDataTable.Columns[idxColumn].ColumnName == property.Name)  //컬럼이 존재시
+                                                        {
+                                                            var val = row[property.Name];
+                                                            if (val == DBNull.Value)
+                                                            {
+                                                                val = null;
+                                                            }
+
+                                                            if (val == null)
+                                                            {
+                                                                if ((property.PropertyType == typeof(DateTime)) ||
+                                                                    (property.PropertyType == typeof(DateTime?)))
+                                                                {
+                                                                    //DateTime? nullableDate = null;
+
+                                                                    //min DateTime
+                                                                    DateTime nullableDate = new DateTime(1900, 1, 1);
+
+                                                                    property.SetValue(instance, nullableDate);
+                                                                }
+                                                                else if (!dbProperty.CanBeNull)
+                                                                {
+                                                                    if (property.PropertyType == typeof(string))
+                                                                    {
+                                                                        property.SetValue(instance, string.Empty);
+                                                                    }
+                                                                    else {
+                                                                        var tmpVal = Activator.CreateInstance(property.PropertyType).GetType();
+                                                                        property.SetValue(instance, Activator.CreateInstance(tmpVal));
+                                                                    }
+                                                                }
+                                                                else {
+                                                                    property.SetValue(instance, null);
+                                                                }
+                                                            }
+                                                            else if ((dbProperty.DbType.StartsWith("nvarchar") &&
+                                                                     (!string.IsNullOrEmpty(val.ToString()))))
+                                                            {
+
+                                                                var sLength = dbProperty.DbType.Substring(("nvarchar(").Length);
+                                                                sLength = sLength.Substring(0, sLength.Length - 1);
+                                                                var iLength = Int32.Parse(sLength);
+                                                                var newVal = val.ToString();
+                                                                newVal = newVal.Substring(0, Math.Min(iLength, newVal.Length));
+
+                                                                if ((property.PropertyType == typeof(char)) &&
+                                                                    (newVal.Length == 1))
+                                                                {
+                                                                    property.SetValue(instance, newVal[0]);
+                                                                }
+                                                                else {
+                                                                    // Set the truncated string
+                                                                    property.SetValue(instance, newVal);
+                                                                }
+                                                            }
+                                                            else if (val.GetType() != property.PropertyType)
+                                                            {
+
+                                                                if ((val.GetType() == typeof(DateTime)) ||
+                                                                    (val.GetType() == typeof(DateTime?)))
+                                                                {
+                                                                    //nullable DateTime
+                                                                    //DateTime? nullableDate = (DateTime)val;                                                            
+
+                                                                    //min DateTime
+                                                                    DateTime nullableDate = new DateTime(1900, 1, 1);
+
+                                                                    property.SetValue(instance, nullableDate);
+                                                                }
+                                                                else if ((property.PropertyType == typeof(DateTime)) ||
+                                                                         (property.PropertyType == typeof(DateTime?)))
+                                                                {
+
+                                                                    var newVal = val.ToString();
+                                                                    var nullableDate = (string.IsNullOrWhiteSpace
+                                                                       (newVal) ? (DateTime?)null : DateTime.Parse(newVal));
+                                                                    property.SetValue(instance, nullableDate);
+                                                                }
+                                                                else {
+                                                                    var pType = property.PropertyType;
+
+                                                                    if ((property.PropertyType.IsGenericType) &&
+                                                                        (property.PropertyType.GetGenericTypeDefinition().
+                                                                           Equals(typeof(Nullable<>))))
+                                                                    {
+                                                                        pType = Nullable.GetUnderlyingType(property.PropertyType);
+                                                                    }
+
+                                                                    var newProp = Convert.ChangeType(val, pType);
+                                                                    property.SetValue(instance, newProp);
+                                                                }
+                                                            }
+                                                            else {
+                                                                property.SetValue(instance, val);
+                                                            }
+
+                                                        } // dbColumn exists
+                                                        else
+                                                        {
+                                                            //if ("ID|Creator".Contains(property.Name)) continue;
+
+                                                            if ("FileID" == (property.Name))   //파일ID Setting
+                                                            {
+                                                                property.SetValue(instance, fileInfo.ID);
+                                                            }
+                                                            else if ("Ref1" == property.Name)    //확장컬럼 Update용
+                                                            {
+                                                                property.SetValue(instance, idx);
+                                                            }
+                                                        }
+
+                                                    } // property loop
+
+                                                    //if (inst.Name != null)
+                                                    
+                                                    context.Valuations.Add(valuationRow);
+                                                    idx++;  //processed row Index
+
+                                                } // DataRow loop
+                                            }// using ExtDefine context
 
                                             // Submit changes.
+                                            var fileEntity = context.Entry(fileInfo);
                                             fileInfo.Result = "S";
                                             fileInfo.Reason = (idx).ToString();
-                                            dbContext.SubmitChanges();
-
-                                            successFileCount++;
+                                            fileEntity.Property(x => x.Result).IsModified = true;
+                                            fileEntity.Property(x => x.Reason).IsModified = true;
+                                            if (context.SaveChanges() > 0)
+                                                successFileCount++;
 
                                             //extContentTable
 
@@ -679,7 +666,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                         success[0] = successFileCount;
                                         success[1] = idx;
 
-                                        UpdateAfterDataRow();   //확정컬럼 존재시 부모값 Update
+                                        scope.Complete();   //Transaction Complete!!!
 
                                         return myDataSet;
                                     } // using DataSet
@@ -691,10 +678,18 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                         catch (Exception ex)
                         {
                             string msg = ex.Message;
+                            //파일내용 갱신
+                            using (EFDbContext fileContext = new EFDbContext())
+                            {
+                                var fileEntity = fileContext.Entry(fileInfo);
+                                fileInfo.Result = "E";
+                                fileInfo.Reason = msg + "\r\nwork row index is (" + idx + ")";
 
-                            fileInfo.Result = "E";
-                            fileInfo.Reason = msg + "\r\nwork row index is (" + idx + ")";
-                            dbContext.SubmitChanges();
+                                fileEntity.Property(x => x.Result).IsModified = true;
+                                fileEntity.Property(x => x.Reason).IsModified = true;
+                                fileContext.SaveChanges();
+                            }
+                            
                         }
 
                     } // class loop
