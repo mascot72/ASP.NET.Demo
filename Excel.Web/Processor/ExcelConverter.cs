@@ -12,7 +12,6 @@ using Microsoft.Office.Interop.Excel;
 using System.Text.RegularExpressions;
 using System.Collections;
 using Excel.Domain.Entites;
-using System.ComponentModel.DataAnnotations.Schema;
 using Excel.Domain.Concrete;
 using System.Transactions;
 
@@ -100,7 +99,7 @@ namespace Excel.Web.Processor
                                   select tmpClass);
                 foreach (var tmpClass in classQuery)
                 {
-                    var attributes = tmpClass.GetCustomAttributes(typeof(TableAttribute), true);    //Class의 속성을 가져온다
+                    var attributes = tmpClass.GetCustomAttributes(typeof(System.Data.Linq.Mapping.TableAttribute), true);    //Class의 속성을 가져온다
                     var properties = tmpClass.GetProperties();
                     var propertyQuery = (from property in properties
                                          where property.CanWrite
@@ -215,6 +214,7 @@ namespace Excel.Web.Processor
             return ds;
         }
 
+        /*
         //파일입력정보
         public IEnumerable<FileImport> GetFileTable()
         {
@@ -319,6 +319,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                 throw ex;
             }
         }
+        */
 
         //DB저장()
         /// <summary>
@@ -332,7 +333,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
         /// <returns></returns>
         public DataSet ExcelToDB(string fileName, int[] success)
         {
-            var extList = GetModelExtendList();
+            //var extList = GetModelExtendList();
 
             if (success == null)
             {
@@ -391,7 +392,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                         {
                             if (1 == 1)   //if (!countQuery.Any())
                             {
-                                var attributes = tmpClass.GetCustomAttributes(typeof(TableAttribute), true);    //Class의 속성을 가져온다
+                                var attributes = tmpClass.GetCustomAttributes(typeof(System.Data.Linq.Mapping.TableAttribute), true);    //Class의 속성을 가져온다
 
                                 if (attributes.Any())
                                 {
@@ -401,7 +402,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                             where property.CanWrite
                                                             select property);
 
-                                    var tableName = ((TableAttribute)attributes[0]).Name;
+                                    var tableName = ((System.Data.Linq.Mapping.TableAttribute)attributes[0]).Name;
 
                                     using (var myDataSet = ExcelToDataSet(fileName))
                                     {
