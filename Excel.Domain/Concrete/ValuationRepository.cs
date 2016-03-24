@@ -37,6 +37,31 @@ namespace Excel.Domain.Concrete
         }
 
         //Create
+        public bool AddModel(Valuation model)
+        {
+            bool result = default(bool);
+
+            try
+            {
+                //model.CreateDate = DateTime.Now;
+                this.context.Valuations.Add(model);
+                result = this.context.SaveChanges() > 0;
+                if (model.ExtendContent != null)
+                {
+                    foreach (var extCont in model.ExtendContent)
+                    {
+                        extCont.ImportID = model.ID;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.log.Error(MethodBase.GetCurrentMethod().Name, ex);
+                throw ex;
+            }
+
+            return result;
+        }
 
         //Remove
 
@@ -68,6 +93,34 @@ namespace Excel.Domain.Concrete
             }
 
             return result;
+        }
+
+        public bool UpdateCleaning()
+        {
+            bool result = default(bool);
+
+            try
+            {
+                result = context.Database.ExecuteSqlCommand(@"
+update Valuations
+set BuyDate = null
+where convert(varchar(10), BuyDate, 126) = '1900-01-01'
+
+update Valuations
+set SellDate = null
+where convert(varchar(10), SellDate, 126) = '1900-01-01'
+
+update Valuations
+set Date = null
+where convert(varchar(10), Date, 126) = '1900-01-01'") > 0;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                this.log.Error(MethodBase.GetCurrentMethod().Name, ex);
+                throw ex;
+            }
         }
 
         /// <summary>

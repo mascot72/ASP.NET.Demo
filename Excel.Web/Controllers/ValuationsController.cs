@@ -133,7 +133,7 @@ namespace Excel.Web.Controllers
         {
             var fileName = string.Empty;
             int targetFiles = 0;
-            int targetRows = 0;
+            int targetRowCount = 0;
 
             if (upload != null && upload.FileName != null)
             {
@@ -144,7 +144,9 @@ namespace Excel.Web.Controllers
             try
             {
                 string xlsPath = @"C:\workspace\resource\Cleansing (1st)\New Valuation";
-                if (folderPath != "") xlsPath = folderPath;
+                if (folderPath != "") {
+                    xlsPath = folderPath;
+                }
 
                 var dir = new System.IO.DirectoryInfo(xlsPath);
                 IEnumerable<FileInfo> files = null;
@@ -170,7 +172,7 @@ namespace Excel.Web.Controllers
                         int resultRows = 0;
                         List<string> extCol = new List<string>();
                         var fileTable = proc.GetFileTable();
-                        int[] result = { 0, 0 };
+                        int[] result = { 0, 0, 0 };
 
                         if (fileName == string.Empty)
                         {
@@ -181,7 +183,9 @@ namespace Excel.Web.Controllers
                                     //Error항목처리시
                                     string filefullName = file.FullName;
 
-                                    if (fileTable.Where(e => e.Name == file.Name && e.Result == "E" && e.Reason.StartsWith("Ext")).Count() > 0)
+                                    //오류만처리(임시)
+                                    /*
+                                    if (fileTable.Where(e => e.Name == file.Name && e.Result == "E").Count() > 0)
                                     {
                                         if (workCount <= 0) break;
                                         ds = proc.ExcelToDB(filefullName, result);
@@ -192,6 +196,7 @@ namespace Excel.Web.Controllers
                                     }
                                     else
                                         continue;
+                                    */
 
                                     if (processState != "")
                                     {
@@ -208,13 +213,15 @@ namespace Excel.Web.Controllers
                                     if (workCount <= 0) break;
                                     ds = proc.ExcelToDB(filefullName, result);
                                     workCount--;    //처리된 만큼 처리할 행수 뺀다
-                                    resultFiles += ds.Tables[0].Rows.Count;
-                                    resultRows += ds.Tables[1].Rows.Count;
+                                    resultFiles += result[0];
+                                    resultRows += result[1];
+                                    targetRowCount += result[2];
                                     targetFiles++;
                                 }
-                                catch (Exception)
+                                catch (Exception ex)
                                 {
                                     //throw;
+                                    ViewBag.Message = ex.Message;
                                 }
                             }
                         }
@@ -223,7 +230,12 @@ namespace Excel.Web.Controllers
                             ds = proc.ExcelToDB(fileName, result);
                         }
                         //proc.UpdateAfter(); //DB 후처리 작업수행
-                        ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", result[0], targetFiles, result[1], resultRows);
+                        //using (ValuationRepository mstContext = new ValuationRepository())
+                        //{
+                        //    mstContext.UpdateCleaning();
+                        //}
+
+                        ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", resultFiles, targetFiles, resultRows, targetRowCount);
                     }
 
                     if (ds != null && ds.Tables.Count == 2)

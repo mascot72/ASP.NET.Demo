@@ -22,6 +22,18 @@ namespace Excel.Domain.Concrete
         }
 
         //GetSingle
+        public FileImport GetModel(int Id)
+        {
+            try
+            {
+                return this.context.FileImports.Find(Id);
+            }
+            catch (Exception ex)
+            {
+                this.log.Error(MethodBase.GetCurrentMethod().Name, ex);
+                throw ex;
+            }
+        }
 
         //GetList
         public IEnumerable<FileImport> FileImports
@@ -33,6 +45,32 @@ namespace Excel.Domain.Concrete
         }
 
         //Create
+
+        //Update
+        public bool ModifyModel(FileImport model)
+        {
+            bool result = default(bool);
+            try
+            {
+                var original = this.context.FileImports.Find(model.ID);
+
+                if (original != null)
+                {                    
+                    original.Result = model.Result;
+                    original.Reason = model.Reason;
+                    original.Remark = model.Remark;
+
+                    result = this.context.SaveChanges() > 0;
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                this.log.Error(MethodBase.GetCurrentMethod().Name, ex);
+                throw ex;
+            }
+        }
 
         //Remove
 
@@ -59,6 +97,7 @@ namespace Excel.Domain.Concrete
             catch (Exception ex)
             {
                 this.log.Error(MethodBase.GetCurrentMethod().Name, ex);
+                throw ex;
             }
 
             return result;

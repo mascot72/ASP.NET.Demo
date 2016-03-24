@@ -10,6 +10,7 @@ namespace Excel.Domain.Migrations
         public Configuration()
         {
             AutomaticMigrationsEnabled = true;
+            AutomaticMigrationDataLossAllowed = true;
             ContextKey = "Excel.Domain.Concrete.EFDbContext";
         }
 

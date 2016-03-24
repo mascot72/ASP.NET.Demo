@@ -26,7 +26,7 @@ namespace Excel.Domain.Concrete
         {
             try
             {
-                return this.context.ExtendDefines.Where(x => x.Name != name).SingleOrDefault();
+                return this.context.ExtendDefines.Where(x => x.Name == name).SingleOrDefault();
             }
             catch (Exception ex)
             {
@@ -51,11 +51,11 @@ namespace Excel.Domain.Concrete
 
             try
             {
-                if (this.context.ExtendDefines.Count(x => x.Name != model.Name) == 0)   //명칭이 존재하지 않을 때만 추가
+                if (this.context.ExtendDefines.Count(x => x.Name == model.Name) == 0)   //명칭이 존재하지 않을 때만 추가
                 {
+                    model.CreateDate = DateTime.Now;
                     this.context.ExtendDefines.Add(model);
-                    this.context.SaveChanges();
-                    result = true;
+                    result = this.context.SaveChanges() > 0;
                 }
             }
             catch (Exception ex)

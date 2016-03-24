@@ -349,7 +349,6 @@ namespace MyWeb.Models.Excel
         [Column(CanBeNull = true, DbType = "float", IsPrimaryKey = false)]
         public Double Qty { get; set; }
 
-        /*
         //Extend columns
         [Display(Name = "Ext1")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
@@ -550,7 +549,7 @@ namespace MyWeb.Models.Excel
         [Display(Name = "Ext50")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext50 { get; set; }
-
+        /*
         [Display(Name = "Ext51")]
         [Column(CanBeNull = true, DbType = "nvarchar(200)", IsPrimaryKey = false)]
         public string Ext51 { get; set; }
