@@ -60,6 +60,14 @@ namespace Excel.Domain.Concrete
                     original.Reason = model.Reason;
                     original.Remark = model.Remark;
 
+                    //기존에 존재하는 파일은 비활성(내가 아니고 결과가 1개인것이고 파일명이 동일한 것)
+                    var existData = this.context.FileImports.Where(x => x.Name == model.Name && x.Result.Length == 1 && x.ID != model.ID).ToList();
+                    foreach(var item in existData)
+                    {
+                        item.Result += model.Result;
+                        item.UpdateDate = DateTime.Now;
+                        item.Updater = model.Updater;
+                    }
                     result = this.context.SaveChanges() > 0;
                 }
 

@@ -28,7 +28,11 @@ namespace Excel.Domain.Entites
 
         public DateTime? CreateDate { get; set; }
 
+        public DateTime? UpdateDate { get; set; }
+
         public string Creator { get; set; }
+
+        public string Updater { get; set; }
 
         public double Size { get; set; }
 

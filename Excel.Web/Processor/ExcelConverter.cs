@@ -146,8 +146,15 @@ namespace Excel.Web.Processor
                                 {
                                     if (property != null)   //속성과 일치하는 Excel컬럼 일 때
                                     {
-                                        
-                                        dt.Columns.Add(new DataColumn(column, property.PropertyType));
+                                        if ((property.PropertyType == typeof(DateTime)) ||
+                                            (property.PropertyType == typeof(DateTime?)))   //DateTime이면
+                                        {
+                                            dt.Columns.Add(new DataColumn(column, typeof(DateTime)));
+                                        }
+                                        else
+                                        {
+                                            dt.Columns.Add(new DataColumn(column, property.PropertyType));
+                                        }
                                     }
                                     else
                                     {
@@ -335,7 +342,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public DataSet ExcelToDB(string fileName, int[] success)
+        public DataSet ExcelToDB(string fileName, int[] success, string processState = "")
         {
             //var extList = GetModelExtendList();
 
@@ -367,7 +374,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                 fileInfo = new FileImport()
                 {
                     Name = files.Name,
-                    Creator = "",
+                    Creator = "Isaac",
                     CreateDate = DateTime.Now,
                     Extend = "",
                     Path = files.DirectoryName,
@@ -573,101 +580,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                         else {
                                                             //값넣기
                                                             property.SetValue(instance, val);
-                                                        }
-
-                                                        #region Comment(preveous code)
-                                                        /*
-                                                        if (val == null)    //값이 Null이면
-                                                        {
-                                                            if ((property.PropertyType == typeof(DateTime)) ||
-                                                                (property.PropertyType == typeof(DateTime?)))   //DateTime이면
-                                                            {
-                                                                //DateTime? nullableDate = null;
-
-                                                                //min DateTime
-                                                                DateTime nullableDate = new DateTime(1900, 1, 1);
-
-                                                                property.SetValue(instance, nullableDate);
-                                                            }
-                                                            else if (!dbProperty.CanBeNull) //Not Null이면
-                                                            {
-                                                                if (property.PropertyType == typeof(string))
-                                                                {
-                                                                    property.SetValue(instance, string.Empty);
-                                                                }
-                                                                else {
-                                                                    var tmpVal = Activator.CreateInstance(property.PropertyType).GetType();
-                                                                    property.SetValue(instance, Activator.CreateInstance(tmpVal));
-                                                                }
-                                                            }
-                                                            else {
-                                                                property.SetValue(instance, null);
-                                                            }
-                                                        }
-                                                        else if ((dbProperty.DbType.StartsWith("nvarchar") &&
-                                                                 (!string.IsNullOrEmpty(val.ToString()))))  //NVarchar이고 값이 있으면
-                                                        {
-                                                            //문자열 최고길이 이하로 절삭
-                                                            var sLength = dbProperty.DbType.Substring(("nvarchar(").Length);
-                                                            sLength = sLength.Substring(0, sLength.Length - 1);
-                                                            var iLength = Int32.Parse(sLength);
-                                                            var newVal = val.ToString();
-                                                            newVal = newVal.Substring(0, Math.Min(iLength, newVal.Length));
-
-                                                            //Char또는 문자열 적용
-                                                            if ((property.PropertyType == typeof(char)) &&
-                                                                (newVal.Length == 1))
-                                                            {
-                                                                property.SetValue(instance, newVal[0]);
-                                                            }
-                                                            else {
-                                                                // Set the truncated string
-                                                                property.SetValue(instance, newVal);
-                                                            }
-                                                        }
-                                                        else if (val.GetType() != property.PropertyType)    //실제 값과 속성의 Type이 다르면
-                                                        {
-
-                                                            if ((val.GetType() == typeof(DateTime)) ||
-                                                                (val.GetType() == typeof(DateTime?)))
-                                                            {
-                                                                //nullable DateTime
-                                                                //DateTime? nullableDate = (DateTime)val;                                                            
-
-                                                                //min DateTime
-                                                                DateTime nullableDate = new DateTime(1900, 1, 1);
-
-                                                                property.SetValue(instance, nullableDate);
-                                                            }
-                                                            else if ((property.PropertyType == typeof(DateTime)) ||
-                                                                     (property.PropertyType == typeof(DateTime?)))
-                                                            {
-
-                                                                var newVal = val.ToString();
-                                                                var nullableDate = (string.IsNullOrWhiteSpace
-                                                                   (newVal) ? (DateTime?)null : DateTime.Parse(newVal));
-                                                                property.SetValue(instance, nullableDate);
-                                                            }
-                                                            else {
-                                                                var pType = property.PropertyType;
-
-                                                                if ((property.PropertyType.IsGenericType) &&
-                                                                    (property.PropertyType.GetGenericTypeDefinition().
-                                                                       Equals(typeof(Nullable<>))))
-                                                                {
-                                                                    pType = Nullable.GetUnderlyingType(property.PropertyType);
-                                                                }
-
-                                                                var newProp = Convert.ChangeType(val, pType);
-                                                                property.SetValue(instance, newProp);
-                                                            }
-                                                        }
-                                                        else {
-                                                            property.SetValue(instance, val);
-                                                        }
-
-                                                        */
-                                                        #endregion
+                                                        }                                                        
 
                                                     } // dbColumn exists
                                                     else
@@ -703,6 +616,8 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                             fileEntity.Reason = (idx).ToString();
                                             fileEntity.Remark = fileInfo.Remark;
                                             fileEntity.Extend = fileInfo.Extend;
+                                            fileEntity.UpdateDate = DateTime.Now;
+                                            fileEntity.Updater = "Isaac";
 
                                             fileContext.ModifyModel(fileEntity);
                                         }
@@ -744,6 +659,8 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                     fileEntity.Result = "E";
                     fileEntity.Reason = msg + "\r\nwork row index is (" + idx + ")";
                     fileContext.ModifyModel(fileEntity);
+                    fileEntity.UpdateDate = DateTime.Now;
+                    fileEntity.Updater = "Isaac";
                 }
             }
             return null;

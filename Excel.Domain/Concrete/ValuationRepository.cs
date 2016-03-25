@@ -45,6 +45,7 @@ namespace Excel.Domain.Concrete
             {
                 //model.CreateDate = DateTime.Now;
                 this.context.Valuations.Add(model);
+
                 result = this.context.SaveChanges() > 0;
                 if (model.ExtendContent != null)
                 {
@@ -113,6 +114,29 @@ where convert(varchar(10), SellDate, 126) = '1900-01-01'
 update Valuations
 set Date = null
 where convert(varchar(10), Date, 126) = '1900-01-01'") > 0;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                this.log.Error(MethodBase.GetCurrentMethod().Name, ex);
+                throw ex;
+            }
+        }
+
+        public bool AfterUpdate(string fileName)
+        {
+            bool result = default(bool);
+
+            try
+            {
+                result = context.Database.ExecuteSqlCommand(string.Format(@"
+update Valuations
+set Result = Result + 'S'
+, UpdateDate = GETDATE()
+where Name = '{0}'
+and length(Result) = 1
+"), fileName) > 0;
 
                 return result;
             }

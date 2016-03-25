@@ -13,10 +13,10 @@ namespace Excel.Domain.Entites
     {
         public Valuation()
         {
-            DateTime defaultDateTime = new DateTime(1900, 1, 1);
-            this.Date = defaultDateTime;
-            this.BuyDate = defaultDateTime;
-            this.SellDate = defaultDateTime;
+            //DateTime defaultDateTime = new DateTime(1900, 1, 1);
+            //this.Date = defaultDateTime;
+            //this.BuyDate = defaultDateTime;
+            //this.SellDate = defaultDateTime;
             this.CreateDate = DateTime.Now;
             this.ExtendContent = new List<ExtendContent>();
         }
@@ -269,7 +269,7 @@ namespace Excel.Domain.Entites
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string TID { get; set; }
 
-        public DateTime Date { get; set; }
+        public DateTime? Date { get; set; }
 
         [MaxLength(255)]
         public string Name { get; set; }
@@ -340,9 +340,9 @@ namespace Excel.Domain.Entites
         [Column(TypeName = "FLOAT")]
         public Double Period { get; set; }
         
-        public DateTime BuyDate { get; set; }
+        public DateTime? BuyDate { get; set; }
         
-        public DateTime SellDate { get; set; }
+        public DateTime? SellDate { get; set; }
 
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string Buyer { get; set; }
@@ -587,7 +587,7 @@ namespace Excel.Domain.Entites
         [MaxLength(2048), Column(TypeName = "NVARCHAR")]
         public string Reason { get; set; }
 
-        public DateTime? CreateDate { get; set; }
+        public DateTime? CreateDate { get; set; }        
 
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string Creator { get; set; }
