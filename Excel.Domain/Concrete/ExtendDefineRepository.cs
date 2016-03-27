@@ -47,7 +47,7 @@ namespace Excel.Domain.Concrete
         //Create
         public bool AddModel(ExtendDefine model)
         {
-            bool result = default(bool);
+            bool result = false;
 
             try
             {

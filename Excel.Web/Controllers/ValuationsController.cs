@@ -138,7 +138,6 @@ namespace Excel.Web.Controllers
             if (upload != null && upload.FileName != null)
             {
                 fileName = upload.FileName;
-                //return UploadFirst(upload);
             }
 
             try
@@ -171,6 +170,8 @@ namespace Excel.Web.Controllers
                     {
                         int resultFiles = 0;
                         int resultRows = 0;
+                        targetFiles = files.Count();
+
                         List<string> extCol = new List<string>();
                         var fileTable = proc.GetFileTable();
 
@@ -182,74 +183,79 @@ namespace Excel.Web.Controllers
                         int[] result = { 0, 0, 0 };
 
                         if (fileName == string.Empty)
-                        {
-                            targetFiles = files.Count();
-                            foreach (var file in files)
+                        {                            
+                            IEnumerable<FileInfo> lst;
+                            if (processState != "")
+                            {
+                                //이력이 있는 파일들
+                                lst = from aa in files
+                                      join bb in fileTable on aa.Name equals bb.Name
+                                      where bb.Result.Equals(processState)
+                                      select aa;
+                            }
+                            else
+                            {
+                                //lst = from aa in files
+                                //      where !fileTable.Select(y=>y.Name).Equals(aa.Name)
+                                //      select aa;
+
+                                var groupBNames = new HashSet<string>(fileTable.Select(x => x.Name));
+                                lst = files.Where(x => !groupBNames.Contains(x.Name));
+
+                                //lst = files.Where(x => !fileTable.Select(b => b.Name).Contains(x.Name));  //이력이 없는 파일들
+                            }
+
+                            foreach (var file in lst)
                             {
                                 try
                                 {
-                                    //Error항목처리시
-                                    string filefullName = file.FullName;
-
-                                    //오류만처리(임시)
-                                    /*
-                                    if (fileTable.Where(e => e.Name == file.Name && e.Result == "E").Count() > 0)
-                                    {
-                                        if (workCount <= 0) break;
-                                        ds = proc.ExcelToDB(filefullName, result);
-                                        workCount--;    //처리된 만큼 처리할 행수 뺀다
-                                        resultFiles += ds.Tables[0].Rows.Count;
-                                        resultRows += ds.Tables[1].Rows.Count;
-                                        targetFiles++;
-                                    }
-                                    else
-                                        continue;
-                                    */
-
                                     if (workCount <= 0) break;
 
-                                    bool process = false;
-
-                                    if (processState != "")
+                                    ds = proc.ExcelToDB(file.FullName, result, processState);
+                                    if (ds != null)
                                     {
-                                        if (fileTable.Where(e => e.Name == file.Name && e.Result == processState).Count() > 0)  //기존 파일이 존재 할때만 처리
-                                        {
-                                            process = true;
-                                        }
-                                    }
-                                    else if (fileTable.Where(e => e.Name == file.Name).Count() == 0)
-                                    {
-                                        process = true; //입력된 파일은 제외!(Error완료항목 요청이 아니고 기존에 존재시 통과)
-                                    }
-                                    if (process)
-                                    {
-                                        ds = proc.ExcelToDB(filefullName, result, processState);
-                                        workCount--;    //처리된 만큼 처리할 행수 뺀다
                                         resultFiles += result[0];
                                         resultRows += result[1];
                                         targetRowCount += result[2];
                                         targetFiles++;
                                     }
+                                    workCount--;    //처리된 만큼 처리할 행수 뺀다
+                                    
                                 }
                                 catch (Exception ex)
                                 {
-                                    //throw;
                                     ViewBag.Message = ex.Message;
                                 }
                             }
                         }
                         else
-                        {
-                            targetFiles = 1;
-                            ds = proc.ExcelToDB(fileName, result, processState);
-                            resultFiles += result[0];
-                            resultRows += result[1];
-                            targetRowCount += result[2];
+                        {                            
+                            bool pass = false;
+                            if (processState != "")
+                            {
+                                pass = fileTable.Where(b => b.Path + "\\" + b.Name == fileName && b.Result == processState).Count() > 0;   //이력이 있는 파일
+                            }
+                            else
+                            {
+                                pass = fileTable.Where(b => b.Path + "\\" + b.Name == fileName).Count() == 0;  //이력이 없는 파일들
+                            }
+                            if (pass)
+                            {
+                                targetFiles = 1;
+                                ds = proc.ExcelToDB(fileName, result, processState);
+                                resultFiles += result[0];
+                                resultRows += result[1];
+                                targetRowCount += result[2];
+                            }
                         }
-                        //proc.UpdateAfter(); //DB 후처리 작업수행
-                        using (ValuationRepository mstContext = new ValuationRepository())
+
+                        //DB 후처리 작업수행
+                        if (targetRowCount > 0)
                         {
-                            mstContext.UpdateCleaning();
+                            using (ValuationRepository mstContext = new ValuationRepository())
+                            {
+                                mstContext.UpdateCleaning();
+                            }
                         }
 
                         ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", resultFiles, targetFiles, resultRows, targetRowCount);
