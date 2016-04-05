@@ -26,5 +26,10 @@ namespace Excel.Web.Controllers
 
             return View();
         }
+
+        public ActionResult exampleApp()
+        {
+            return View();
+        }
     }
 }
