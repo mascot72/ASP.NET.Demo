@@ -35,31 +35,46 @@
 @section Scripts {
 <script>
         angular.module("exampleApp", [])
-        .config(function ($httpProvider) {
-            $httpProvider.interceptors.push(function () {
-                return {
-                    request: function (config) {
-                        //config.url = "/productData.json";
-                        config.url = config.url;
-                        return config;
-                    },
-                    response: function (response) {
-                        console.log("Data Count: " + response.data.length);
-                        return response;
-                    }
-                }
-            });
-        })
+        //.config(function ($httpProvider) {
+        //    $httpProvider.interceptors.push(function () {
+        //        return {
+        //            request: function (config) {
+        //                //config.url = "/productData.json";
+        //                config.url = config.url;
+        //                alert(config.url);
+        //                return config;
+        //            },
+        //            response: function (response) {
+        //                console.log("Data Count: " + response.data.length);
+        //                return response;
+        //            }
+        //        }
+        //    });
+        //})
+        //.service("imageService", function ($http) {
+        //    return {
+        //        getImages: function (requestUrl) {
+        //            $http.get(requestUrl = '/productData.json', { responseType: JSON });
+        //        }
+        //    }
+        //})
         .controller("defaultCtrl", function ($scope, $http) {
             $scope.loadData = function () {
                 var url = '/productData.json';
-                url = '/api/ExtendDefines';
+                url = '/api/ExtendDefines';                
                 $http.get(url).success(function (data) {
+                    
                     $scope.products = data;
                 }).error(function (err) {
                     alert(err);
                 });
             }
+            
+            //$scope.getImg = function (requestUrl) {
+            //    imageService.getImages(requestUrl).success(function (result) {
+            //        return result;
+            //    });
+            //}
         });
 </script>
 }
