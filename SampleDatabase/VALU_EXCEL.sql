@@ -10,6 +10,7 @@
 [Version] varchar(255) NULL,
 [Type] varchar(255) NULL,
 [DealNo] float NULL,
+[PKID] varchar(255) NULL,
 [LeadNo] varchar(255) NULL,
 [Comment] nvarchar(2000) NULL,
 [Currency] varchar(255) NULL,
