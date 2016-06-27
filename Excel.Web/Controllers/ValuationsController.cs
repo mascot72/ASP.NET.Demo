@@ -23,6 +23,14 @@ namespace Excel.Web.Controllers
             return View(valuations.ToList());
         }
 
+        // GET: ProcessRate
+        public ActionResult GetProcessRate(int workCount = 10, string processState = "", string startDate = "")
+        {
+            DateTime stDate = startDate != null && !string.IsNullOrEmpty(startDate) ? DateTime.Parse(startDate) : DateTime.MinValue;
+            var resultVal = new { targetCount = db.FileImports.Count(), successfulCount = db.FileImports.Where(e => e.CreateDate >= stDate).Count() };
+            return Json(resultVal, JsonRequestBehavior.AllowGet);
+        }
+
         // GET: Valuations/Details/5
         public ActionResult Details(int? id)
         {
@@ -127,6 +135,15 @@ namespace Excel.Web.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Excel Import Processing
+        /// </summary>
+        /// <param name="upload"></param>
+        /// <param name="isReadonly">화면으로 조회만 할때</param>
+        /// <param name="workCount"></param>
+        /// <param name="processState"></param>
+        /// <param name="folderPath"></param>
+        /// <returns></returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Upload(HttpPostedFileBase upload, string isReadonly, int workCount = 10, string processState = "", string folderPath = "")
@@ -142,7 +159,7 @@ namespace Excel.Web.Controllers
 
             try
             {
-                string xlsPath = @"C:\workspace\resource\Cleansing (1st)\New Valuation";
+                string xlsPath = @"C:\doc\Valuation\Valuation Cleansing with PK ID";
                 if (folderPath != "")
                 {
                     xlsPath = folderPath;
@@ -183,7 +200,7 @@ namespace Excel.Web.Controllers
                         int[] result = { 0, 0, 0 };
 
                         if (fileName == string.Empty)
-                        {                            
+                        {
                             IEnumerable<FileInfo> lst;
                             if (processState != "")
                             {
@@ -220,7 +237,7 @@ namespace Excel.Web.Controllers
                                         targetFiles++;
                                     }
                                     workCount--;    //처리된 만큼 처리할 행수 뺀다
-                                    
+
                                 }
                                 catch (Exception ex)
                                 {
@@ -229,7 +246,7 @@ namespace Excel.Web.Controllers
                             }
                         }
                         else
-                        {                            
+                        {
                             bool pass = false;
                             if (processState != "")
                             {
@@ -276,6 +293,195 @@ namespace Excel.Web.Controllers
             return View();
         }
 
+        //1개의 파일 Import
+        [HttpPost]
+        public ActionResult MyFileUpload(string processState = "", string filePath = "")
+        {
+            var fileName = string.Empty;
+            int targetFiles = 0;
+            int targetRowCount = 0;
+            DataSet ds = null;
+            bool pass = false;
+
+            fileName = filePath;            
+
+            try
+            {
+                if (string.IsNullOrEmpty(fileName)) return Json(null);
+
+                var file = new System.IO.FileInfo(fileName);
+                if (file.Exists)
+                {
+                    if (ModelState.IsValid)
+                    {
+                        Excel.Web.Processor.ExcelConverter proc = new Excel.Web.Processor.ExcelConverter();
+
+                      
+                            int resultFiles = 0;
+                            int resultRows = 0;
+                            int[] result = { 0, 0, 0 };
+
+                            List<string> extCol = new List<string>();
+                            var fileTable = proc.GetFileTable();
+
+                            if (processState != "")
+                            {
+                                fileTable = fileTable.Where(e => e.Result == processState).ToList();
+                            }
+                            
+                            if (processState != "")
+                            {
+                                pass = fileTable.Where(b => b.Path + "\\" + b.Name == fileName && b.Result == processState).Count() > 0;   //이력이 있는 파일
+                            }
+                            else
+                            {
+                                pass = fileTable.Where(b => b.Path + "\\" + b.Name == fileName).Count() == 0;  //이력이 없는 파일들
+                            }
+                            if (pass)
+                            {
+                                targetFiles = 1;
+                                ds = proc.ExcelToDB(fileName, result, processState);
+                            }
+
+                            //DB 후처리 작업수행
+                            if (targetRowCount > 0)
+                            {
+                                using (ValuationRepository mstContext = new ValuationRepository())
+                                {
+                                    mstContext.UpdateCleaning();
+                                }
+                            }
+
+                            ViewBag.Message = string.Format("Success File Count({0}/{1}) \r\nSuccess Row Count({2}/{3})", resultFiles, targetFiles, resultRows, targetRowCount);
+                        
+                    }
+
+                    if (ds != null && ds.Tables.Count == 2)
+                        return Json(1);
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Message = ex.Message;
+                return Json(0);
+            }
+
+            return Json(0);
+        }
+        //파일정보가져오기
+        [HttpPost]
+        public ActionResult GetUploadableData(HttpPostedFileBase upload, string isReadonly, int workCount = 10, string processState = "", string folderPath = "")
+        {
+            var fileName = string.Empty;
+            FileInfo[] fileList = null;
+            IEnumerable<FileInfo> files1 = null;
+            int targetFiles = 0;
+
+            if (upload != null && upload.FileName != null)
+            {
+                fileName = upload.FileName;
+            }
+
+            try
+            {
+                string xlsPath = @"C:\doc\Valuation\Valuation Cleansing with PK ID";
+                if (folderPath != "")
+                {
+                    xlsPath = folderPath;
+                }
+
+                var dir = new System.IO.DirectoryInfo(xlsPath);
+
+                if (dir.Exists)
+                {
+                    fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
+                    var files = from item in fileList
+                                where item.Extension.Contains("xls")
+                                select new { Name = item.Name, Length = item.Length, Directory = item.Directory.FullName };
+
+                    releaseObject(fileList);
+                    fileList = null;
+
+                    if (ModelState.IsValid)
+                    {
+                        Excel.Web.Processor.ExcelConverter proc = new Excel.Web.Processor.ExcelConverter();
+                        DataSet ds = null;
+                        if (isReadonly != null && isReadonly == "true")
+                        {
+                            return UploadFirst(upload);
+                        }
+                        else
+                        {
+                            targetFiles = files.Count();
+
+                            List<string> extCol = new List<string>();
+                            var fileTable = proc.GetFileTable();
+
+                            if (processState != "")
+                            {
+                                fileTable = fileTable.Where(e => e.Result == processState).ToList();
+                            }
+
+                            IEnumerable<FileInfo> lst;
+                            if (processState != "")
+                            {
+                                //이력이 있는 파일들
+                                var list = from aa in files
+                                           join bb in fileTable on aa.Name equals bb.Name
+                                           where bb.Result.Equals(processState)
+                                           select new { Name = aa.Name, Length = aa.Length, Directory = aa.Directory };
+
+                                return Json(new { result = list });
+                            }
+                            else
+                            {
+                                //DB에 없는 파일의 목록
+                                var groupBNames = new HashSet<string>(fileTable.Select(x => x.Name));
+
+                                var listFile = fileTable.Select(e => new { Name = e.Name, Length = (long)e.Size, Directory = e.Path });
+                                var result = files.Except(listFile);    //차
+
+                                return Json(result);
+                            }
+                        }
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Message = ex.Message;
+                return Json(null);
+            }
+            finally
+            {
+
+            }
+
+
+
+            return Json(null);
+        }
+
+        private void releaseObject(object obj)
+        {
+            try
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+                obj = null;
+            }
+            catch (Exception ex)
+            {
+                obj = null;
+                //MessageBox.Show("Unable to release the Object " + ex.ToString());
+            }
+            finally
+            {
+                //GC.Collect();
+            }
+        }
+
+        //화면에 보여주기만 한다.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult UploadFirst(HttpPostedFileBase upload)

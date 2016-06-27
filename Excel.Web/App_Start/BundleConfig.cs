@@ -29,6 +29,9 @@ namespace Excel.Web
 
             bundles.Add(new ScriptBundle("~/bundles/angularjs").Include(
                       "~/Scripts/angular.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/animate").Include(
+                      "~/Scripts/angular-animate.min.js"));            
         }
     }
 }

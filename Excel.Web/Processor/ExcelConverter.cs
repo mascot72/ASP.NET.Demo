@@ -53,17 +53,19 @@ namespace Excel.Web.Processor
 
             var missing = System.Reflection.Missing.Value;
 
-            Application app = new Microsoft.Office.Interop.Excel.Application();
 
-            //파일읽기
-            Workbook workbook = app.Workbooks.Open(fileName, false, true, missing, missing, missing, true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, '\t', false, false, 0, false, true, 0);
-            Worksheet worksheet = workbook.Worksheets[1] as Microsoft.Office.Interop.Excel.Worksheet; worksheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Worksheets.get_Item(1);
-
-            Range xlRange = worksheet.UsedRange;
-            Array myValues = (Array)xlRange.Cells.Value2;
-
+            Application app = null;
+            Workbook workbook = null;
+            Worksheet worksheet = null;
+            Range xlRange = null;
             try
             {
+                app = new Microsoft.Office.Interop.Excel.Application();
+                workbook = app.Workbooks.Open(fileName, false, true, missing, missing, missing, true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, '\t', false, false, 0, false, true, 0);
+                worksheet = workbook.Worksheets[1] as Microsoft.Office.Interop.Excel.Worksheet; worksheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Worksheets.get_Item(1);
+
+                xlRange = worksheet.UsedRange;
+                Array myValues = (Array)xlRange.Cells.Value2;
 
                 int vertical = myValues.GetLength(0);
                 int horizontal = myValues.GetLength(1);
@@ -214,9 +216,10 @@ namespace Excel.Web.Processor
             }
             finally
             {
-                workbook.Close(true, missing, missing);
+                workbook.Close(false, missing, false);
                 app.Quit();
-
+                
+                releaseObject(xlRange);
                 releaseObject(worksheet);
                 releaseObject(workbook);
                 releaseObject(app);
@@ -660,7 +663,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
             }
             finally
             {
-                GC.Collect();
+                //GC.Collect();
             }
         }
 

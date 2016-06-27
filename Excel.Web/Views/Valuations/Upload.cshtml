@@ -6,10 +6,8 @@
 @using System.Data;
 
 <!DOCTYPE html>
-
-
 <h2>Upload Files</h2>
-<div>
+<div ng-app="App" ng-controller="AppCtrl as vm">
     @using (Html.BeginForm("Upload", "Valuations", null, FormMethod.Post, new { enctype = "multipart/form-data" }))
     {
         @Html.AntiForgeryToken()
@@ -27,20 +25,43 @@
             </span>
             <input type="text" name="folderPath" class="form-control" placeholder="Search for Folder">
         </div><!-- /input-group -->
-            <div class="form-group">
-                <input type="submit" name="" value="Upload view" class="btn btn-default" onclick="isReadonly.value='true'" />
-                <input type="hidden" name="isReadonly" value="false" />
-                <label>preocess file count:</label><input type="number" name="workCount" class="text-right" />
-                <div class="input-group">
-                    <span class="label label-default">기존처리 파일재처리(상태선택)</span>
-                    <select name="processState" class="form-control">
-                        <option value="">All</option>
-                        <option value="E">Error</option>
-                        <option value="S">Successful</option>
-                    </select>
+        <div class="form-group">
+            <input type="submit" name="" value="Upload view" class="btn btn-default" onclick="isReadonly.value='true'" />
+            <input type="hidden" name="isReadonly" value="false" />
+            <label>preocess file count:</label><input type="number" name="workCount" class="text-right" ng-model="targetCount" />
+            <div class="input-group">
+                <span class="label label-default">기존처리 파일재처리(상태선택)</span>
+                <select name="processState" class="form-control">
+                    <option value="">All</option>
+                    <option value="E">Error</option>
+                    <option value="S">Successful</option>
+                </select>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">Target Files</div>
+            <div class="panel-body">
+                <ul class="list-group">
+                    <li class="list-group-item" ng-repeat="item in files | orderBy:'Name'">
+                        <span class="badge itemRow">{{item.Length | number}}</span>
+                        {{$index+1}} | {{item.Name}}
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-alert"></span> Warning! real send , naver cancel</div>
+                <div class="row sending" ng-show="progressing">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" ng-style="{width: rate +'%'}">
+                            {{rate}}%
+                        </div>
+                    </div>
                 </div>
             </div>
-
+            <div class="panel-footer"><button type="button" class="btn btn-danger height2 large realSend" ng-click="realButtonClick()" ng-readonly="targetState()">Real Upload</button></div>
+        </div>
 
         if (ViewBag.Message != null)
         {
@@ -83,4 +104,245 @@
         }
     }
 </div>
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/animate")
+
+    <script>
+        var app = angular.module("App", ['ngAnimate'])
+        .controller('AppCtrl', ['$scope', '$interval', '$http', function ($scope, $interval, $http) {
+            var self = this, j = 0, counter = 0, stop = 0, newVal, oldVal;
+            $scope.format = 'y/M/d a h:m:s';
+            $scope.rate = 0;	//진행율
+            $scope.progressing = false;	//전송중 여부
+            $scope.targetCount = 0;
+            $scope.files = [];
+
+            $scope.targetState = function () {
+                return ($scope.targetCount > 0);
+            };
+
+            var startDate = Date.now();
+
+            //진행상황조회
+            var progressUpdate = function () {
+                $http({
+                    method: 'POST',
+                    url: 'GetProcessRate',
+                    data: { workCount: $('[name=workCount]').val(), processState: $('[name=processState]').val(), startDate: startDate },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' }
+                })
+                .success(function (result) {
+
+                    var data = result;
+                    if (data) {
+                        //angular.forEach(data, function (task, index) {
+                        var successfulCount = data.successfulCount,
+                            targetCount = $scope.targetCount ? $scope.targetCount : data.targetCount;
+                        if (successfulCount != 0 && targetCount != 0) {
+                            $scope.rate = Math.round(successfulCount / targetCount * 100);
+                        }
+                        else {
+                            $scope.rate = 0;
+                        }
+                        newVal = data.rate;
+                        if (newVal != oldVal) {
+                            oldVal = newVal;
+                            j = 0;
+                        }
+                        else
+                            j++;
+
+                        if ($scope.rate == 100) {
+                            $scope.sendStop();
+                            $('.realSend').text('Send Successfuly(' + targetCount + ')');
+                            $('.realSend').attr('disabled', 'disabled');
+
+                            //전송이 완료되었으니 상태를 마감처리 하도록 유도!
+                            if (confirm('Send Successfuly, this Close?')) {
+                                //updateTmStatus('CLOSED', function () {
+                                //다시조회
+
+                                //});
+                            }
+                        }
+                        //});
+                        counter++;
+                    }
+                    if (j > 2 * 20) {
+                        $scope.sendStop();	//변화가 20초이상 없으면 중단!
+                    }
+                })
+                .error(function (err) {
+                    $scope.sendStop();
+                    alert(err);
+                });
+            };
+            //파일정보 읽기
+            var loadFiles = function () {
+                $http({
+                    method: 'POST',
+                    url: 'GetUploadableData',
+                    async:true,
+                    data: {
+                        workCount: $('[name=workCount]').val(),
+                        processState: $('[name=processState]').val(),
+                        startDate: startDate
+                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' }
+                })
+                .success(function (result) {
+                    if (result) {
+                        var successfulCount = 0;
+                        $scope.targetCount = result.length;
+                        $scope.files = result;
+
+                        //파일업로드 수행
+                        angular.forEach(result, function (val, idx) {
+                            successfulCount++;
+                            if (idx < 200) {
+
+                                if (fileUpload(val.Directory + '\\' + val.Name)) {
+                                    
+                                    $scope.rate = Math.round(successfulCount / $scope.targetCount * 100);
+                                    $('.itemRow:eq(' + idx + ')').addClass('text-success');
+                                }
+
+                            }
+
+                            
+                        });
+                    }
+                })
+                .error(function (err) {
+                    alert(err);
+                });
+            };
+            //초기바인딩
+
+            //전송버튼event
+            $scope.realButtonClick = function () {
+                sendActionType = 'realSend';
+                var sendable = $('.realSend').text();
+                if (sendable == 'Cancel Uploading') {
+                    $('.realSend').text('Real Send');
+                    //$scope.sendStop();
+                }
+                else {
+                    //realSend();
+                    loadFiles();
+                }
+            }
+
+            //전송률 확인시작
+            $scope.sendStart = function () {
+                counter = 0;
+                $scope.rate = 0;
+                $scope.progressing = true;
+                stop = $interval(progressUpdate, 500);
+            };
+            //전송률 확인중지
+            $scope.sendStop = function () {
+                $interval.cancel(stop);
+                stop = undefined;
+                $scope.rate = 100;
+                $scope.progressing = false;
+                $('.realSend').text('Real Upload');
+            };
+            //소멸자 반드시 수행한다
+            $scope.$on('$destroy', function () {
+                $scope.sendStop();
+            });
+
+            //파일업로드
+            var fileUpload = function (filePath) {
+                
+                $http({
+                    method: 'POST',
+                    url: 'MyFileUpload',
+                    async: false,
+                    data: { processState: $('[name=processState]').val(), filePath: filePath }
+                })
+                .success(function (result) {
+                    
+                    var data = result;
+                    if (data) {
+                        //같은 이름의 행의 색 변환(초록)
+                        return true;
+                        //angular.forEach(data, function (task, index) {
+                        //});
+                    }
+                    return false;
+                })
+                .error(function (err) {
+                    alert(err);
+                });
+            };
+
+        }]);
+
+        //대상파일 조회
+        function realSend() {
+            if (confirm("Do you want to Upload " + sendActionType) == true) {
+                //Start Progress
+                var sendingController = angular.element($('.progress')).scope();
+                if (sendActionType == 'realSend') {
+                    $('.realSend').text('Cancel Uploading');
+                    sendingController.sendStart();
+                }
+
+                var sendForm = '';
+
+                //$.ajax({
+                //    type: 'POST',
+                //    url: "GetUploadableData",
+                //    data: { workCount: $('[name=workCount]').val(), processState: $('[name=processState]').val(), folderPath: $('[name=folderPath]').val() },
+                //    dataType: "json",
+                //    async: true,
+                //    success: function (data) {
+                                                
+                //        //End Progress
+                //        if (sendActionType == 'realSend') {
+                //            $('.realSend').text('Real Send');
+                //            //sendingController.sendStop();
+                //        }
+
+                //        alert(data.length);
+                //    },
+                //    error: function (e) {
+                //        //End Progress
+                //        if (sendActionType == 'realSend') {
+                //            $('.realSend').text('Real Send');
+                //            sendingController.sendStop();
+                //        }
+
+                //        alert('Error occured' +e);
+                //    }
+                //});
+            }
+        }
+
+        var sendActionType = '';
+        //$(document).ready(function () {
+
+        //    $('.realSend').click(function () {
+        //        sendActionType = 'realSend';
+        //        var sendable = $('.realSend').text();
+        //        if (sendable == 'Cancel Uploading') {
+        //            var sendingController = angular.element($('.progress')).scope();
+        //            $('.realSend').text('Real Send');
+        //            sendingController.sendStop();
+        //        }
+        //        else {
+        //            var sendingController = angular.element($('.progress')).scope();
+        //            sendingController.progressUpdate();
+        //            //realSend();
+        //        }
+                    
+        //    });
+
+        //});
+    </script>
+}
+
 

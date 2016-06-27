@@ -284,6 +284,9 @@ namespace Excel.Domain.Entites
         public Double DealNo { get; set; }
 
         [MaxLength(255), Column(TypeName = "VARCHAR")]
+        public string PKID { get; set; }
+
+        [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string LeadNo { get; set; }
         
         [MaxLength(2000)]
