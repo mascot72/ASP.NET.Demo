@@ -397,7 +397,7 @@ namespace Excel.Web.Controllers
                     fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
                     var files = from item in fileList
                                 where item.Extension.Contains("xls")
-                                select new { Name = item.Name, Length = item.Length, Directory = item.Directory.FullName };
+                                select new { Name = item.Name, Length = item.Length, Directory = item.Directory.FullName, selected = false };
 
                     releaseObject(fileList);
                     fileList = null;
@@ -426,19 +426,19 @@ namespace Excel.Web.Controllers
                             if (processState != "")
                             {
                                 //이력이 있는 파일들
-                                var list = from aa in files
+                                var result = from aa in files
                                            join bb in fileTable on aa.Name equals bb.Name
                                            where bb.Result.Equals(processState)
-                                           select new { Name = aa.Name, Length = aa.Length, Directory = aa.Directory };
+                                           select new { Name = aa.Name, Length = aa.Length, Directory = aa.Directory, selected = false };
 
-                                return Json(new { result = list });
+                                return Json(result);
                             }
                             else
                             {
                                 //DB에 없는 파일의 목록
                                 var groupBNames = new HashSet<string>(fileTable.Select(x => x.Name));
 
-                                var listFile = fileTable.Select(e => new { Name = e.Name, Length = (long)e.Size, Directory = e.Path });
+                                var listFile = fileTable.Select(e => new { Name = e.Name, Length = (long)e.Size, Directory = e.Path, selected = false });
                                 var result = files.Except(listFile);    //차
 
                                 return Json(result);

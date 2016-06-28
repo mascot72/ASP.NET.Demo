@@ -62,10 +62,12 @@ namespace Excel.Web.Processor
             {
                 app = new Microsoft.Office.Interop.Excel.Application();
                 workbook = app.Workbooks.Open(fileName, false, true, missing, missing, missing, true, Microsoft.Office.Interop.Excel.XlPlatform.xlWindows, '\t', false, false, 0, false, true, 0);
-                worksheet = workbook.Worksheets[1] as Microsoft.Office.Interop.Excel.Worksheet; worksheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Worksheets.get_Item(1);
+                //worksheet = workbook.Worksheets[1] as Microsoft.Office.Interop.Excel.Worksheet;
+                worksheet = (Microsoft.Office.Interop.Excel.Worksheet)workbook.Worksheets.get_Item(1);
 
                 xlRange = worksheet.UsedRange;
-                Array myValues = (Array)xlRange.Cells.Value2;
+                
+                var myValues = xlRange.Cells.Value2;
 
                 int vertical = myValues.GetLength(0);
                 int horizontal = myValues.GetLength(1);
@@ -219,7 +221,7 @@ namespace Excel.Web.Processor
                 workbook.Close(false, missing, false);
                 app.Quit();
                 
-                releaseObject(xlRange);
+                //releaseObject(xlRange);
                 releaseObject(worksheet);
                 releaseObject(workbook);
                 releaseObject(app);
@@ -389,6 +391,8 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                 context.FileImports.Add(fileInfo);
                 context.SaveChanges();
             }
+            releaseObject(files);
+            files = null;
 
             try
             {
