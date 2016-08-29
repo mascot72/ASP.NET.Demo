@@ -263,8 +263,8 @@ namespace Excel.Domain.Entites
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string InvenNo { get; set; }
 
-        [Column(TypeName = "FLOAT")]
-        public Double SGNo { get; set; }
+        [MaxLength(255), Column(TypeName = "VARCHAR")]
+        public string SGNo { get; set; }
         
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string TID { get; set; }

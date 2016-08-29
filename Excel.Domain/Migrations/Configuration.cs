@@ -1,5 +1,6 @@
 namespace Excel.Domain.Migrations
 {
+    using Entites;
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Migrations;
@@ -28,6 +29,13 @@ namespace Excel.Domain.Migrations
             //      new Person { FullName = "Rowan Miller" }
             //    );
             //
+            //context.Valuations.AddOrUpdate(new Valuation()
+            //{
+            //    SGNo = "TEXT"
+            //    ,FileID=1
+            //    ,Name="TEDT"
+            //});
+            
         }
     }
 }
