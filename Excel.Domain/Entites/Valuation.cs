@@ -288,7 +288,10 @@ namespace Excel.Domain.Entites
 
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string LeadNo { get; set; }
-        
+
+        [MaxLength(1000), Column(TypeName = "VARCHAR")]
+        public string PeriodE { get; set; }
+
         [MaxLength(2000)]
         public string Comment { get; set; }
 
