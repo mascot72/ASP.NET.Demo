@@ -218,10 +218,10 @@ namespace Excel.Web.Processor
             }
             finally
             {
-                object misValue = System.Reflection.Missing.Value;
-                workbook.Close(true, misValue, misValue);
-                //workbook.Close(false, missing, false);
-                app.Application.Quit();
+                //object misValue = System.Reflection.Missing.Value;
+                //workbook.Close(true, misValue, misValue);
+                workbook.Close(false, missing, false);
+                //app.Application.Quit();
                 app.Quit();
                 
                 //releaseObject(xlRange);
