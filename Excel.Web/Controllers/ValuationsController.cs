@@ -23,7 +23,7 @@ namespace Excel.Web.Controllers
             return View(valuations.ToList());
         }
 
-        // GET: ProcessRate
+        // GET: Process Rate
         public ActionResult GetProcessRate(int workCount = 10, string processState = "", string startDate = "")
         {
             DateTime stDate = startDate != null && !string.IsNullOrEmpty(startDate) ? DateTime.Parse(startDate) : DateTime.MinValue;
@@ -140,9 +140,9 @@ namespace Excel.Web.Controllers
         /// </summary>
         /// <param name="upload"></param>
         /// <param name="isReadonly">화면으로 조회만 할때</param>
-        /// <param name="workCount"></param>
-        /// <param name="processState"></param>
-        /// <param name="folderPath"></param>
+        /// <param name="workCount">작업대상 파일수</param>
+        /// <param name="processState">처리할 상태</param>
+        /// <param name="folderPath">폴더경로</param>
         /// <returns></returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -159,10 +159,14 @@ namespace Excel.Web.Controllers
 
             try
             {
-                string xlsPath = @"C:\doc\Valuation\Valuation Cleansing with PK ID";
+                string xlsPath = @"";
                 if (folderPath != "")
                 {
                     xlsPath = folderPath;
+                }
+                else
+                {
+                    new ApplicationException("파일경로가 없습니다");
                 }
 
                 var dir = new System.IO.DirectoryInfo(xlsPath);
@@ -356,8 +360,11 @@ namespace Excel.Web.Controllers
                         
                     }
 
+                    //결과반환
                     if (ds != null && ds.Tables.Count == 2)
                         return Json(1);
+                    else
+                        return Json(0);
                 }
             }
             catch (Exception ex)
@@ -368,6 +375,7 @@ namespace Excel.Web.Controllers
 
             return Json(0);
         }
+
         //파일정보가져오기
         [HttpPost]
         public ActionResult GetUploadableData(HttpPostedFileBase upload, string isReadonly, int workCount = 10, string processState = "", string folderPath = "")
@@ -384,10 +392,14 @@ namespace Excel.Web.Controllers
 
             try
             {
-                string xlsPath = @"C:\doc\Valuation\Valuation Cleansing with PK ID";
+                string xlsPath = @"";
                 if (folderPath != "")
                 {
                     xlsPath = folderPath;
+                }
+                else
+                {
+                    new ApplicationException("파일경로가 없습니다");
                 }
 
                 var dir = new System.IO.DirectoryInfo(xlsPath);
@@ -451,16 +463,12 @@ namespace Excel.Web.Controllers
             catch (Exception ex)
             {
                 ViewBag.Message = ex.Message;
-                return Json(null);
             }
             finally
             {
 
             }
-
-
-
-            return Json(null);
+            return Json("");
         }
 
         private void releaseObject(object obj)

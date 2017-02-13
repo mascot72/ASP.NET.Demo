@@ -12,48 +12,43 @@
     {
         @Html.AntiForgeryToken()
         @Html.ValidationSummary()
-
-        <div class="form-group">
-            <input type="file" id="dataFile" name="upload" />
-        </div>
-        <div class="form-group">
-            <input type="submit" name="" value="Upload process" class="btn btn-default" onclick="isReadonly.value='false'" />
-        </div>
-        <div class="input-group">
-            <span class="input-group-btn">
-                <button class="btn btn-default" type="button">Go!</button>
-            </span>
-            <input type="text" name="folderPath" class="form-control" placeholder="Search for Folder">
-        </div><!-- /input-group -->
-        <div class="form-group">
-            <input type="submit" name="" value="Upload view" class="btn btn-default" onclick="isReadonly.value='true'" />
-            <input type="hidden" name="isReadonly" value="false" />
-            <label>preocess file count:</label><input type="number" name="workCount" class="text-right" ng-model="targetCount" />
-            <div class="input-group">
-                <span class="label label-default">기존처리 파일재처리(상태선택)</span>
-                <select name="processState" class="form-control">
-                    <option value="">All</option>
-                    <option value="E">Error</option>
-                    <option value="S">Successful</option>
-                </select>
+        <div class="well well-sm">
+            <div class="form-group">
+                <input type="file" id="dataFile" name="upload" />
+            </div>
+            <div class="form-group">
+                <input type="submit" name="" value="File View" class="btn btn-info" onclick="isReadonly.value='true'" />
+                <input type="submit" name="" value="Upload" class="btn btn-danger" onclick="isReadonly.value='false'" />
             </div>
         </div>
         <div class="row">
             <div class="col-sm-6 col-xs-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        Target Files
-                        <input type="checkbox" id="allCheck" ng-model="selectedAll" ng-click="checkAll()" /><label for="allCheck">All Check</label>
-                    </div>
+                <div class="panel panel-success">
+                    <div class="panel-heading">Excel Import작업</div>
                     <div class="panel-body">
-                        <ul class="list-group">
-                            <li class="list-group-item itemRow" ng-repeat="item in files | orderBy:'Name'">
-                                <span class="badge">{{item.Length | number}}</span>
-                                <input type="checkbox" ng-model="item.selected" />
-                                {{$index+1}} | {{item.Name}}
-                            </li>
-                        </ul>
+                        <div class="form-inline">
+                            <div class="input-group">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button">폴더단위</button>
+                                </span>
+                                <input type="text" name="folderPath" class="form-control" placeholder="Search for Folder" value="C:\doc\Valuation\0905 All">
+                            </div><!-- /input-group -->
+                            <div class="form-group">
+                                <input type="hidden" name="isReadonly" value="false" />
+                                <label for="workCount">Process count</label>
+                                <input type="number" id="workCount" name="workCount" class="form-control" ng-model="targetCount" />
+                            </div>
+                            <div class="form-group">
+                                <label for="processState">기존파일재처리(상태선택)</label>
+                                <select id="processState" name="processState" class="form-control">
+                                    <option value="">All(완료가 아닌 모든것)</option>
+                                    <option value="E">Error</option>
+                                    <option value="S">Successful</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+                    <div class="panel-footer"></div>
                 </div>
             </div>
             <div class="col-sm-6 col-xs-12">
@@ -70,14 +65,35 @@
                     </div>
                     <div class="panel-footer">
                         <button type="button" class="btn btn-info height2 large" ng-click="loadFiles()" ng-disabled="readed">Get Target</button>
-                        <button type="button" class="btn btn-danger height2 large realSend" ng-click="realButtonClick()" ng-disabled="sended">Real Upload</button>
+                        <button type="button" class="btn btn-danger height2 large realSend" ng-click="realButtonClick()">Real Upload</button>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Target Files
+                        <input type="checkbox" id="allCheck" ng-model="selectedAll" ng-click="checkAll()" /><label for="allCheck">All Check</label>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="list-group">
+                            <li class="col-sm-6 col-xs-12 list-group-item itemRow" ng-repeat="item in files | orderBy:'Name'">
+                                <span class="badge">{{item.Length | number}}</span>
+                                <input type="checkbox" ng-model="item.selected" />
+                                {{$index+1}} | {{item.Name}}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
         if (ViewBag.Message != null)
         {
-            <div class="form-horizontal">
+            <div class="alert alert-danger form-horizontal">
                 @ViewBag.Message
             </div>
         }
@@ -136,8 +152,9 @@
                 return ($scope.targetCount > 0);
             };
 
-            var startDate = Date.now();
+            var startDate = new Date();
 
+            //전체선택 Checkbox동작
             $scope.checkAll = function () {
                 if ($scope.selectedAll) {
                     $scope.selectedAll = true;
@@ -186,23 +203,23 @@
                             $('.realSend').attr('disabled', 'disabled');
 
                             //전송이 완료되었으니 상태를 마감처리 하도록 유도!
-                            if (confirm('Send Successfuly, this Close?')) {
+                            //if (confirm('Send Successfully, this Close?')) {
                                 //updateTmStatus('CLOSED', function () {
                                 //다시조회
 
                                 //});
-                            }
+                            //}
                         }
                         //});
                         counter++;
                     }
-                    if (j > 2 * 20) {
+                    if (j > 2 * 10) {
                         $scope.sendStop();	//변화가 20초이상 없으면 중단!
                     }
                 })
                 .error(function (err) {
                     $scope.sendStop();
-                    alert(err);
+                    //alert(err);
                 });
             };
 
@@ -217,6 +234,7 @@
                     data: {
                         workCount: $('[name=workCount]').val(),
                         processState: $('[name=processState]').val(),
+                        folderPath: $('[name=folderPath]').val(),
                         startDate: startDate
                     }
                 })
@@ -231,53 +249,70 @@
                     $scope.sended = false;
                 })
                 .error(function (err) {
-                    alert(err);
+                    //alert(err);
                     $scope.readed = false;
                 });
             };
             
             //Excel Import수행
             var remainCount = 0;
+            var gSuccessfulCount = 0;
+            var gTargetCount = 0;
+            //Upload전송
             var realSend = function () {
                 $scope.readed = true;
                 $scope.sended = true;
-                //파일업로드 수행
-                var successfulCount = 0;
+                
                 //업로드대상수
                 var targetCount = 0;
+                var targetIndex = [];
+                gTargetCount = 0;
                 remainCount = targetCount;
                 $.each($scope.files, function (idx, val) {
                     if (val.selected) {
-                        targetCount++;
+                        gTargetCount++;
+                        targetIndex.push(idx);
                     }
                 });
-                
-                $.each($scope.files, function (idx, val) {
-                    $scope.progressing = true;
-                    if (val.selected) {
-                        successfulCount++;
-                        fileUpload(val.Directory + '\\' + val.Name);
-                        $scope.rate = Math.round(successfulCount / targetCount * 100);
-                        $('.itemRow:eq(' + idx + ')').addClass('text-success');
-                        remainCount--;
-                        if (remainCount < 1) {
-                            $scope.sended = false;
-                            $scope.readed = false;
-                        }
-                    }
-                });
+
+                gSuccessfulCount = 0;
+                targetIndex.reverse();  //내부에서 앞에서부터 실행되도록 reverse해서 넘긴다
+                fileUploadReRun($scope.files, targetIndex);
+
+                //전체행Loop
+                //$.each($scope.files, function (idx, val) {
+                //    $scope.progressing = true;
+                //    if (val.selected) { //선택된 파일
+                //        successfulCount++;
+                //        fileUpload(val.Directory + '\\' + val.Name);
+
+                //        $scope.rate = Math.round(successfulCount / targetCount * 100);
+                //        $('.itemRow:eq(' + idx + ')').addClass('text-success');
+                //        remainCount--;
+                //        if (remainCount < 1) {
+                //            $scope.sended = false;
+                //            $scope.readed = false;
+                //        }
+                        
+                //    }
+                //});
                 
             };
 
             //전송버튼event
+            var sending = false;    //전송중여부
             $scope.realButtonClick = function () {
                 sendActionType = 'realSend';
+                
                 var sendable = $('.realSend').text();
                 if (sendable == 'Cancel Uploading') {
                     $('.realSend').text('Real Send');
+                    sending = false;
                     //$scope.sendStop();
                 }
                 else {
+                    $('.realSend').text('Cancel Uploading');
+                    sending = true;
                     realSend();                    
                 }
             }
@@ -287,7 +322,7 @@
                 counter = 0;
                 $scope.rate = 0;
                 $scope.progressing = true;
-                stop = $interval(progressUpdate, 500);
+                stop = $interval(progressUpdate, 10000);
             };
             //전송률 확인중지
             $scope.sendStop = function () {
@@ -302,7 +337,7 @@
                 $scope.sendStop();
             });
 
-            //파일업로드
+            //파일업로드(1개의 파일)
             var fileUpload = function (filePath) {
                 
                 $http({
@@ -312,13 +347,48 @@
                     data: { processState: $('[name=processState]').val(), filePath: filePath }
                 })
                 .success(function (result) {
-                    var data = result;
-                    if (data) {
-                        return true;
-                    }
-                    return false;
+                    
                 })
                 .error(function (err) {
+                    alert(err);
+                });
+            };
+
+            //파일업로드 재귀(1개의 파일)
+            var fileUploadReRun = function (filesJson, targetArray) {
+                $scope.progressing = true;
+                var idx = targetArray.pop();
+                if (idx == null || !sending) {  //대상이 없거나 중단요청일때
+
+                    $scope.readed = false;
+                    $scope.sended = false;
+                    $('.realSend').text('Real Send');
+
+                    return;
+                }
+
+                console.log('index:', idx);
+                var filePath = filesJson[idx].Directory + '\\' + filesJson[idx].Name;
+                $http({
+                    method: 'POST',
+                    url: 'MyFileUpload',
+                    async: false,
+                    data: { processState: $('[name=processState]').val(), filePath: filePath }
+                })
+                .success(function (result) {
+                    //색바꾸기
+                    $('.itemRow:eq(' + idx + ')')
+                        .addClass('text-success');
+
+                    $scope.files[idx].selected = false;//체크해제
+                    //성공률
+                    $scope.rate = Math.round(++gSuccessfulCount / gTargetCount * 100); 
+                    
+                    fileUploadReRun(filesJson, targetArray);    //다음파일작업
+                })
+                .error(function (err) {
+                    $('.itemRow:eq(' + idx + ')')
+                       .addClass('text-danger');
                     alert(err);
                 });
             };
