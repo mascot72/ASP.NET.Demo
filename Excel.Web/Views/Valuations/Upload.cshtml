@@ -75,7 +75,7 @@
             <div class="col-xs-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        Target Files
+                        Target Files <span class="badge">{{files.length}}</span>
                         <input type="checkbox" id="allCheck" ng-model="selectedAll" ng-click="checkAll()" /><label for="allCheck">All Check</label>
                     </div>
                     <div class="panel-body">
@@ -372,14 +372,22 @@
                 $http({
                     method: 'POST',
                     url: 'MyFileUpload',
-                    async: false,
+                    async: true,
                     data: { processState: $('[name=processState]').val(), filePath: filePath }
                 })
                 .success(function (result) {
-                    //색바꾸기
-                    $('.itemRow:eq(' + idx + ')')
-                        .addClass('text-success');
-
+                    //색바꾸기 + 완료Icon추가
+                    if (result == '1') {
+                        $('.itemRow:eq(' + idx + ')')
+                            .addClass('text-success')
+                            .find(':checkbox').attr('disabled', true)
+                            .append('<span class="glyphicon glyphicon-ok"></span>');
+                    }
+                    else if (result == '0') {
+                        $('.itemRow:eq(' + idx + ')')
+                            .addClass('text-danger')
+                            .append('<span class="glyphicon glyphicon-warning-sign"></span>');
+                    }
                     $scope.files[idx].selected = false;//체크해제
                     //성공률
                     $scope.rate = Math.round(++gSuccessfulCount / gTargetCount * 100); 

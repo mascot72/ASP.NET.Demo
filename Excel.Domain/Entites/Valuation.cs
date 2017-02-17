@@ -286,16 +286,16 @@ namespace Excel.Domain.Entites
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string PKID { get; set; }
 
-        [MaxLength(255), Column(TypeName = "VARCHAR")]
+        [MaxLength(2048), Column(TypeName = "VARCHAR")]
         public string LeadNo { get; set; }
 
         [MaxLength(1000), Column(TypeName = "VARCHAR")]
         public string PeriodE { get; set; }
 
-        [MaxLength(2000)]
+        [MaxLength(4096)]
         public string Comment { get; set; }
 
-        [MaxLength(2000)]
+        [MaxLength(4096)]
         public string Comment_1 { get; set; }
 
         [MaxLength(255), Column(TypeName = "VARCHAR")]
@@ -322,7 +322,7 @@ namespace Excel.Domain.Entites
         [MaxLength(255), Column(TypeName = "VARCHAR")]
         public string SerialNo { get; set; }
 
-        [MaxLength(255), Column(TypeName = "VARCHAR")]
+        [MaxLength(2048), Column(TypeName = "VARCHAR")]
         public string Config { get; set; }
 
         [MaxLength(255), Column(TypeName = "VARCHAR")]

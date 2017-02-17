@@ -45,8 +45,29 @@ namespace Excel.Domain.Concrete
             {
                 //model.CreateDate = DateTime.Now;
                 this.context.Valuations.Add(model);
+                
+                try
+                {
+                    result = this.context.SaveChanges() > 0;
+                }
+                catch (System.Data.Entity.Validation.DbEntityValidationException dbEx)
+                {
+                    Exception raise = dbEx;
+                    foreach (var validationErrors in dbEx.EntityValidationErrors)
+                    {
+                        foreach (var validationError in validationErrors.ValidationErrors)
+                        {
+                            string message = string.Format("{0}:{1}",
+                                validationErrors.Entry.Entity.ToString(),
+                                validationError.ErrorMessage);
+                            // raise a new exception nesting
+                            // the current instance as InnerException
+                            raise = new ApplicationException(message, raise);
+                        }
+                    }
+                    throw raise;
+                }
 
-                result = this.context.SaveChanges() > 0;
                 if (model.ExtendContent != null)
                 {
                     foreach (var extCont in model.ExtendContent)

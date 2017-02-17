@@ -175,7 +175,7 @@ namespace Excel.Web.Controllers
                 {
                     var fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
                     files = from file in fileList
-                            where file.Extension.Contains("xls")
+                            where file.Extension.ToLower().Contains("xls")
                             select file;
                 }
 
@@ -408,7 +408,7 @@ namespace Excel.Web.Controllers
                 {
                     fileList = dir.GetFiles("*.*", System.IO.SearchOption.AllDirectories);
                     var files = from item in fileList
-                                where item.Extension.Contains("xls")
+                                where item.Extension.ToLower().Contains("xls")
                                 select new { Name = item.Name, Length = item.Length, Directory = item.Directory.FullName, selected = false };
 
                     releaseObject(fileList);
@@ -435,7 +435,7 @@ namespace Excel.Web.Controllers
                             }
 
                             IEnumerable<FileInfo> lst;
-                            if (processState != "")
+                            if (processState != "") //처리했던 파일중 완료(S)|에러(E)인 상태 조회
                             {
                                 //이력이 있는 파일들
                                 var result = from aa in files
@@ -447,11 +447,12 @@ namespace Excel.Web.Controllers
                             }
                             else
                             {
-                                //DB에 없는 파일의 목록
+                                //DB에 없는 파일(처리하지 않은)의 목록
                                 var groupBNames = new HashSet<string>(fileTable.Select(x => x.Name));
 
                                 var listFile = fileTable.Select(e => new { Name = e.Name, Length = (long)e.Size, Directory = e.Path, selected = false });
-                                var result = files.Except(listFile);    //차
+                                //var listDbFile = fileTable.Select(e => new { Name = e.Name, selected = false });
+                                var result = files.Except(listFile);    //차(file목록 - db처리한목록), 처리한 모든것을 빼기때문에 에러난 것도 제외된다
 
                                 return Json(result);
                             }
@@ -506,11 +507,11 @@ namespace Excel.Web.Controllers
                     // We return the interface, so that
                     IExcelDataReader reader = null;
 
-                    if (upload.FileName.EndsWith(".xls"))
+                    if (upload.FileName.ToLower().EndsWith(".xls"))
                     {
                         reader = ExcelReaderFactory.CreateBinaryReader(stream);
                     }
-                    else if (upload.FileName.EndsWith(".xlsx"))
+                    else if (upload.FileName.ToLower().EndsWith(".xlsx"))
                     {
                         reader = ExcelReaderFactory.CreateOpenXmlReader(stream);
                     }

@@ -400,7 +400,9 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
             try
             {
                 //2. 데이타등록
-                using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
+                TimeSpan timeout = new TimeSpan(new DateTime().AddMinutes(15).Ticks);//Timeout 8분
+
+                using (TransactionScope scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions() { IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted, Timeout = timeout }))
                 {
                     using (EFDbContext context = new EFDbContext())
                     {
@@ -409,7 +411,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                           select tmpClass);
 
                         foreach (var tmpClass in classQuery)
-                        {   
+                        {
                             try
                             {
                                 using (var myDataSet = ExcelToDataSet(fileName))
@@ -592,7 +594,7 @@ where convert(varchar(10), Date, 126) = '1900-01-01'");
                                                 } // property loop
                                                 #endregion
 
-                                                mstContext.AddModel(valuationRow);                                                
+                                                mstContext.AddModel(valuationRow);
                                                 idx++;  //processed row Index
 
                                             } // DataRow loop
