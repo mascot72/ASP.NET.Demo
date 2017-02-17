@@ -340,7 +340,7 @@ namespace Excel.Domain.Entites
         [MaxLength(1000)]
         public string InspectionSummary { get; set; }
 
-        [MaxLength(1000)]
+        [MaxLength(4096)]
         public string Remark { get; set; }
 
         [Column(TypeName = "FLOAT")]
